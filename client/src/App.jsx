@@ -12,6 +12,7 @@ import Listing from "./pages/Listing";
 import Footer from "./components/Footer";
 import Dashboard from "./pages/Dashboard";
 import Contact from "./components/Contact";
+import Search from "./pages/Search";
 export default function App() {
   return (
     <BrowserRouter>
@@ -25,6 +26,8 @@ export default function App() {
         <Route path="/about" element={<About />} />
         <Route path="/contact" element={<Contact />} />
         <Route path="/listing/:listingId" element={<Listing />} />
+        <Route path="/search" element={<Search />} />
+
 
         <Route element={<PrivateRoute />}>
           <Route path="/profile" element={<Profile />} />
