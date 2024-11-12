@@ -1,21 +1,14 @@
-import { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
-import { Swiper, SwiperSlide } from 'swiper/react';
-import SwiperCore from 'swiper';
-import { useSelector } from 'react-redux';
-import { Navigation } from 'swiper/modules';
-import 'swiper/css/bundle';
-import {
-  FaBath,
-  FaBed,
-  FaChair,
-  FaMapMarkerAlt,
-  FaParking,
-  FaShare,
-} from 'react-icons/fa';
-import Contact from '../components/Contact';
-import AppointmentForm from './AppointmentForm';
-
+/* eslint-disable no-unused-vars */
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { Swiper, SwiperSlide } from "swiper/react";
+import SwiperCore from "swiper";
+import { useSelector } from "react-redux";
+import { Navigation } from "swiper/modules";
+import "swiper/css/bundle";
+import Contact from "../components/Contact";
+import AppointmentForm from "./AppointmentForm";
+import { AlertCircle, Bath, Bed, Car, Loader2, MapPin, Share2, Sofa,HousePlus,HomeIcon,Building2,Building,Hotel } from "lucide-react";
 
 SwiperCore.use([Navigation]);
 
@@ -27,9 +20,6 @@ export default function Listing() {
   const [contact, setContact] = useState(false);
   const params = useParams();
   const { currentUser } = useSelector((state) => state.user);
-
-
-
 
   useEffect(() => {
     const fetchListing = async () => {
@@ -53,160 +43,170 @@ export default function Listing() {
     fetchListing();
   }, [params.listingId]);
 
-
   return (
-    <main>
-      {loading && <p className='text-center my-7 text-2xl'>Loading...</p>}
-      {error && <p className='text-center my-7 text-2xl'>Something went wrong!</p>}
+    <main className="bg-gray-50 min-h-screen">
+      {loading && (
+        <div className="flex items-center justify-center h-96">
+          <Loader2 className="w-8 h-8 text-green-500 animate-spin" />
+        </div>
+      )}
+      
+      {error && (
+        <div className="flex items-center justify-center h-96 text-red-500 gap-2">
+          <AlertCircle className="w-6 h-6" />
+          <p className="text-xl">Something went wrong!</p>
+        </div>
+      )}
+
       {listing && !loading && !error && (
-        <div>
-          <Swiper navigation>
-            {listing.imageUrls.map((url) => (
-              <SwiperSlide key={url}>
-                <div
-                  className='h-[550px] rounded-lg shadow-lg overflow-hidden'
-                  style={{
-                    background: `url(${url}) center no-repeat`,
-                    backgroundSize: 'cover',
-                  }}
-                ></div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-          <div className='fixed top-[13%] right-[3%] z-10 border rounded-full w-12 h-12 flex justify-center items-center bg-slate-100 cursor-pointer'>
-            <FaShare
-              className='text-slate-500'
+        <div className="max-w-7xl mx-auto px-4 py-8">
+          <div className="relative">
+            <Swiper 
+              navigation 
+              className="rounded-2xl overflow-hidden shadow-xl"
+            >
+              {listing.imageUrls.map((url) => (
+                <SwiperSlide key={url}>
+                  <div
+                    className='h-[600px] w-full rounded-2xl'
+                    style={{
+                      background: `url(${url}) center no-repeat`,
+                      backgroundSize: 'cover',
+                    }}
+                  />
+                </SwiperSlide>
+              ))}
+            </Swiper>
+
+            <button
               onClick={() => {
                 navigator.clipboard.writeText(window.location.href);
                 setCopied(true);
-                setTimeout(() => {
-                  setCopied(false);
-                }, 2000);
+                setTimeout(() => setCopied(false), 2000);
               }}
-            />
+              className="absolute top-4 right-4 z-10 p-3 bg-white/90 backdrop-blur-sm rounded-full shadow-lg hover:bg-white transition-all duration-300"
+            >
+              <Share2 className="w-5 h-5 text-gray-700" />
+            </button>
+            
+            {copied && (
+              <div className="absolute top-20 right-4 z-10 py-2 px-4 bg-black text-white rounded-md text-sm animate-fade-in">
+                Link copied!
+              </div>
+            )}
           </div>
-          {copied && (
-            <p className='fixed top-[23%] right-[5%] z-10 rounded-md bg-slate-100 p-2'>
-              Link copied!
-            </p>
-          )}
-          <div className='flex flex-col max-w-4xl mx-auto p-3 my-7 gap-4'>
-            <p className='text-2xl font-semibold'>
-              {listing.name} - ₹{' '}
-              {listing.offer
-                ? listing.discountPrice.toLocaleString('en-US')
-                : listing.regularPrice.toLocaleString('en-US')}
-              {listing.type === 'rent' && ' / month'}
-            </p>
-            <p className='text-slate-800'>
-              <b> <span className='font-semibold text-black'>Appointment Fee - ₹{listing.appointmentFees} </span></b>
 
-            </p>
-            <p className='flex items-center mt-6 gap-2 text-slate-600 text-sm'>
-              <FaMapMarkerAlt className='text-green-700' />
-              {listing.address}
-            </p>
-            <div className='flex gap-4'>
-              <p className='bg-red-900 w-full max-w-[200px] text-white text-center p-1 rounded-md'>
-                {listing.type === 'rent' ? 'For Rent' : 'For Sale'}
-              </p>
-              {listing.offer && (
-                <p className='bg-green-900 w-full max-w-[200px] text-white text-center p-1 rounded-md'>
-                  ₹{listing.regularPrice - +listing.discountPrice} OFF
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-6">
+              <div className="bg-white rounded-xl p-6 shadow-sm">
+                <h1 className="text-3xl font-bold text-gray-900">
+                  {listing.name}
+                </h1>
+                
+                <div className="flex items-center gap-2 mt-2">
+                  <MapPin className="w-4 h-4 text-green-600" />
+                  <p className="text-gray-600">{listing.address}</p>
+                </div>
+
+                <div className="flex gap-4 mt-6">
+                  <div className="px-4 py-2 bg-green-50 text-green-700 rounded-lg font-medium">
+                    ₹{listing.regularPrice.toLocaleString('en-US')}
+                    {listing.type === 'rent' && '/month'}
+                  </div>
+                  {listing.offer && (
+                    <div className="px-4 py-2 bg-red-50 text-red-700 rounded-lg font-medium">
+                      ₹{listing.regularPrice - +listing.discountPrice} OFF
+                    </div>
+                  )}
+                </div>
+
+                <div className="mt-6">
+                  <h2 className="text-lg font-semibold mb-2">Appointment Fee</h2>
+                  <p className="text-2xl font-bold text-green-600">
+                    ₹{listing.appointmentFees}
+                  </p>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl p-6 shadow-sm">
+                <h2 className="text-lg font-semibold mb-4">Description</h2>
+                <p className="text-gray-600 leading-relaxed">
+                  {listing.description}
                 </p>
-              )}
+              </div>
+
+              <div className="bg-white rounded-xl p-6 shadow-sm">
+                <h2 className="text-lg font-semibold mb-4">Property Features</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                    <Bed className="w-5 h-5 text-green-600" />
+                    <span>{listing.bedrooms} Beds</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-3 bg-gray-50 rounded-lg">
+                    <Bath className="w-5 h-5 text-green-600" />
+                    <span>{listing.bathrooms} Baths</span>
+                  </div>
+                  <div className={`flex items-center gap-2 p-3 rounded-lg ${listing.parking ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                    <Car className="w-5 h-5" />
+                    <span>{listing.parking ? 'Parking' : 'No Parking'}</span>
+                  </div>
+                  <div className={`flex items-center gap-2 p-3 rounded-lg ${listing.furnished ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                    <Sofa className="w-5 h-5" />
+                     
+                    <span>{listing.furnished ? 'Furnished' : 'Unfurnished'}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-white rounded-xl p-6 shadow-sm">
+                <h2 className="text-lg font-semibold mb-4">Property Type</h2>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[
+                    { type: 'villa', icon: HomeIcon },
+                    { type: 'bunglow', icon: Building2 },
+                    { type: 'townhouse', icon: Building },
+                    { type: 'appartment', icon: HousePlus  },
+                    { type: 'condominum', icon: Hotel },
+                  ].map(({ type, icon: Icon }) => (
+                    listing[type] && (
+                      <div key={type} className="flex items-center gap-2 p-3 bg-green-50 text-green-700 rounded-lg">
+                        <Icon className="w-5 h-5" />
+                        <span className="capitalize">{type}</span>
+                      </div>
+                    )
+                  ))}
+                </div>
+              </div>
             </div>
-            <p className='text-slate-800'>
-              <span className='font-semibold text-black'>Description - </span>
-              {listing.description}
-            </p>
-            <ul className='font-semibold'>
-              <li className={`flex items-center gap-1 whitespace-nowrap ${listing.villa ? 'text-green-900' : 'text-red-500'}`}>
 
-                {listing.villa ? 'Villa' : ' '}
-              </li>
-              <li className={`flex items-center gap-1 whitespace-nowrap ${listing.bunglow ? 'text-green-900' : 'text-red-500'}`}>
-
-                {listing.bunglow ? 'Bunglow' : ' '}
-              </li>
-              <li className={`flex items-center gap-1 whitespace-nowrap ${listing.townhouse ? 'text-green-900' : 'text-red-500'}`}>
-
-                {listing.townhouse ? 'Townhouse' : ' '}
-              </li>
-              <li className={`flex items-center gap-1 whitespace-nowrap ${listing.appartment ? 'text-green-900' : 'text-red-500'}`}>
-
-                {listing.appartment ? 'Appartment' : ' '}
-              </li>
-              <li className={`flex items-center gap-1 whitespace-nowrap ${listing.condominum ? 'text-green-900' : 'text-red-500'}`}>
-
-                {listing.condominum ? 'Condominum' : ' '}
-              </li>
-              <li className={`flex items-center gap-1 whitespace-nowrap ${listing.duplex ? 'text-green-900' : 'text-red-500'}`}>
-
-                {listing.duplex ? 'Duplex' : ' '}
-              </li>
-              <li className={`flex items-center gap-1 whitespace-nowrap ${listing.triplex ? 'text-green-900' : 'text-red-500'}`}>
-
-                {listing.triplex ? 'Triplex' : ' '}
-              </li>
-              <li className={`flex items-center gap-1 whitespace-nowrap ${listing.other ? 'text-green-900' : 'text-red-500'}`}>
-
-                {listing.other ? 'Other' : ' '}
-              </li>
-            </ul>
-
-            <ul className='text-green-900 font-semibold text-sm flex flex-wrap items-center gap-4 sm:gap-6'>
-              <li className='flex items-center gap-1 whitespace-nowrap '>
-                <FaBed className='text-lg' />
-                {listing.bedrooms > 1
-                  ? `${listing.bedrooms} beds `
-                  : `${listing.bedrooms} bed `}
-              </li>
-              <li className='flex items-center gap-1 whitespace-nowrap '>
-                <FaBath className='text-lg' />
-                {listing.bathrooms > 1
-                  ? `${listing.bathrooms} baths `
-                  : `${listing.bathrooms} bath `}
-              </li>
-              <li className={`flex items-center gap-1 whitespace-nowrap ${listing.parking ? 'text-green-900' : 'text-red-500'}`}>
-                <FaParking className='text-lg' />
-                {listing.parking ? 'Parking spot' : 'No Parking'}
-              </li>
-              <li className={`flex items-center gap-1 whitespace-nowrap ${listing.furnished ? 'text-green-900' : 'text-red-500'}`}>
-                <FaChair className='text-lg' />
-                {listing.furnished ? 'Furnished' : 'Unfurnished'}
-              </li>
-
-
-
-            </ul>
-            <ul>
-
-            </ul>
-
-            <div className='flex space-x-20'>
-              {contact && <Contact listing={listing} />}
-              {currentUser && listing.userRef !== currentUser._id && !contact && (<AppointmentForm />)}
-
-
+            <div className="lg:col-span-1">
+              <div className="sticky top-8 space-y-6">
+                {currentUser && listing.userRef !== currentUser._id && (
+                  <div className="bg-white rounded-xl shadow-sm p-6">
+                    <AppointmentForm />
+                  </div>
+                )}
+                
+                {contact && (
+                  <div className="bg-white rounded-xl shadow-sm p-6">
+                    <Contact listing={listing} />
+                  </div>
+                )}
+              </div>
             </div>
-            {/* {currentUser && listing.userRef !== currentUser._id && !contact && (
-              <button
-                onClick={() => setContact(true)}
-                className='bg-green-700 text-white rounded-lg uppercase hover:opacity-95 p-3'
-              >
-                Contact landlord
-              </button>
-            )} */}
-
-
-
-
-
           </div>
         </div>
       )}
-    </main>
 
-  )
+      <style>{`
+        @keyframes fade-in {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+          animation: fade-in 0.3s ease-out;
+        }
+      `}</style>
+    </main>
+  );
 }

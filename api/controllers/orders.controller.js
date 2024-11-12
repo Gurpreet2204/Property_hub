@@ -1,46 +1,61 @@
 import Order from '../models/order.model.js'; 
-import Razorpay from 'razorpay'; 
+import Razorpay from 'razorpay';
 
 const razorpayInstance = new Razorpay({
-//   key_id: process.env.RAZORPAY_KEY_ID,
-  key_id: "rzp_test_0o4NhN2bWbS3HN",
-//   key_secret: process.env.RAZORPAY_SECRET,
-  key_secret:"57MWf0vaI3H0Q91FHOayWjK1",
+  key_id: process.env.RAZORPAY_KEY_ID,
+  key_secret: process.env.RAZORPAY_SECRET,
 });
 
 export const createOrder = async (req, res) => {
   try {
-    const { appointmentFees, status, orderId, createdAt } = req.body;
+    const { appointmentFees, status, orderId } = req.body;
+
+    if (!appointmentFees) {
+      return res.status(400).json({
+        code: 400,
+        message: "appointmentFees is required.",
+      });
+    }
 
     const options = {
-      amount: appointmentFees * 100, 
+      amount: appointmentFees * 100, // Convert to paise
       currency: "INR",
-      receipt: orderId, 
-      notes: {
-        status,
-        createdAt,
-      },
+      receipt: orderId,
     };
 
+    // Create order with Razorpay
     const order = await razorpayInstance.orders.create(options);
+    console.log("Order created with Razorpay:", order); // Log Razorpay's response
 
+    // Save order details in MongoDB
     const newOrder = new Order({
       orderId: order.id,
-      amount: order.amount / 100, 
+      amount: order.amount,
       currency: order.currency,
-      status: order.status,
+      status: order.status || status,
       createdAt: new Date().toISOString(),
     });
 
     await newOrder.save();
+    console.log("Order saved in MongoDB:", newOrder); // Log MongoDB order data
 
-    return res.status(200).json({
+    // Send response to frontend
+    const responseData = {
       code: 200,
       message: "Order created successfully",
-      data: order,
-    });
+      data: {
+        id: order.id,
+        amount: order.amount,
+        currency: order.currency,
+        createdAt: order.created_at,
+      },
+    };
+    
+    console.log("Response data sent to frontend:", responseData); // Log final response data
+    return res.status(200).json(responseData);
+    
   } catch (error) {
-    console.error(error);
+    console.error("Error creating order:", error); // Log error details
     return res.status(500).json({
       code: 500,
       message: "Server error",
@@ -48,9 +63,10 @@ export const createOrder = async (req, res) => {
   }
 };
 
+
 export const getOrders = async (req, res) => {
   try {
-    const orders = await Order.find(); 
+    const orders = await Order.find();
     return res.status(200).json({
       code: 200,
       message: "Orders retrieved successfully",

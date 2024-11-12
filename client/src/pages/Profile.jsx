@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
 import { useDispatch, useSelector } from "react-redux";
 import { useRef, useState, useEffect } from "react";
@@ -33,7 +34,7 @@ import {
   deleteUserSuccess,
   signOutUserStart,
 } from "../redux/user/userSlice";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Profile() {
   const fileRef = useRef(null);
@@ -49,6 +50,7 @@ export default function Profile() {
   const [userAppointments, setUserAppointments] = useState([]);
   const [Loading, setLoading] = useState(true);
   const [Error, setError] = useState(null);
+  const navigate = useNavigate()
   const dispatch = useDispatch();
   useEffect(() => {
     if (file) {
@@ -135,10 +137,13 @@ export default function Profile() {
         return;
       }
       dispatch(deleteUserSuccess(data));
-    } catch (error) {
+    } catch (data) {
       dispatch(deleteUserFailure(data.message));
     }
   };
+  const handleCreateListing = ()=>{
+    navigate("/create-listing")
+  }
 
   useEffect(() => {
     const handleShowListings = async () => {
@@ -148,7 +153,7 @@ export default function Profile() {
         const res = await fetch(`/api/user/listings/${currentUser._id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
-          }, // Replace with your actual token
+          }, 
         });
         const data = await res.json();
 
@@ -167,77 +172,58 @@ export default function Profile() {
     handleShowListings();
   }, []);
 
+  useEffect(() => {
+    const fetchUserAppointments = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch("/api/appointments/my-appointments", {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          credentials: "include",
+        });
 
-//   useEffect(() => {
-//     const fetchUserAppointments = async () => {
-//       try {
-//         setLoading(true);
-//         const response = await fetch('/api/appointments/my-appointments', {
-//           headers: {
-//             'Authorization': `Bearer ${localStorage.getItem('token')}`
-//           },
-//           credentials: 'include'
-//         });
-        
-//         const data = await response.json();
-//         console.log('Appointments data:', data); // Debug log
-        
-//         if (!response.ok) {
-//           throw new Error(data.message || 'Failed to fetch appointments');
-//         }
-        
-//         setUserAppointments(data.appointments || []);
-//       } catch (error) {
-//         console.error('Error fetching appointments:', error);
-//         setError(error.message);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
+        const data = await response.json();
+        console.log("Appointments data:", data); 
 
-//     fetchUserAppointments();
-//   }, []);
-useEffect(()=>{
-    const createTestAppointment = async () => {
-        try {
-            const response = await fetch('/api/appointments/my-appointments', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('token')}`
-                },
-                body: JSON.stringify({
-                    userId: '67299e5f14e030cab0b3e5b1' // Get this from your current user object
-                })
-            });
-            const data = await response.json();
-            console.log('Test appointment created:', data);
-        } catch (error) {
-            console.error('Error creating test appointment:', error);
+        if (!response.ok) {
+          throw new Error(data.message || "Failed to fetch appointments");
         }
+
+        setUserAppointments(data.appointments || []);
+      } catch (error) {
+        console.error("Error fetching appointments:", error);
+        setError(error.message);
+      } finally {
+        setLoading(false);
+      }
     };
-    createTestAppointment()
-},[])
 
+    fetchUserAppointments();
+  }, []);
+  useEffect(() => {
+    const createTestAppointment = async () => {
+      try {
+        const response = await fetch("/api/appointments/my-appointments", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify({
+            userId: currentUser._id,
+          }),
+        });
+        const data = await response.json();
+        console.log("Test appointment created:", data);
+      } catch (error) {
+        console.error("Error creating test appointment:", error);
+      }
+    };
+    createTestAppointment();
+  }, []);
 
-  //   const handleListingDelete = async (listingId) => {
-  //     try {
-  //       const res = await fetch(`/api/listing/delete/${listingId}`, {
-  //         method: "DELETE",
-  //       });
-  //       const data = await res.json();
-  //       if (data.success === false) {
-  //         console.log(data.message);
-  //         return;
-  //       }
-
-  //       setUserListings((prev) =>
-  //         prev.filter((listing) => listing._id !== listingId)
-  //       );
-  //     } catch (error) {
-  //       console.log(error.message);
-  //     }
-  //   };
+  
 
   const NavigationCard = ({
     icon: Icon,
@@ -287,7 +273,7 @@ useEffect(()=>{
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Navigation Sidebar */}
+          
           <div className="lg:col-span-1 space-y-4">
             <NavigationCard
               icon={UserCircle}
@@ -319,7 +305,7 @@ useEffect(()=>{
             />
           </div>
 
-          {/* Main Content Area */}
+          
           <div className="lg:col-span-3">
             {activeSection === "profile" && (
               <div className="bg-white rounded-xl shadow-sm p-6">
@@ -423,6 +409,16 @@ useEffect(()=>{
                       <Trash2 className="w-5 h-5 mr-2" />
                       Delete Account
                     </button>
+
+                   
+                    <button
+                      type="button"
+                      onClick={handleCreateListing}
+                      className="bg-green-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-colors"
+                    >
+                      Create Listing
+                    </button>
+
                     <button
                       disabled={loading}
                       type="submit"
@@ -452,20 +448,20 @@ useEffect(()=>{
             {activeSection === "properties" && (
               <Dashboard
                 activeTab="listings"
-                userListings={userListings} // Pass your listings data here
-                // userAppointments={userAppointments}
-                // propertyAppointments={propertyAppointments}
+                userListings={userListings} 
+                userAppointments={userAppointments}
+                propertyAppointments={userAppointments}
               />
             )}
 
-            {/* {activeSection === 'appointments' && (
-                        <Dashboard 
-                            activeTab="appointments"
-                            userListings={userListings}
-                            userAppointments={userAppointments} // Pass your appointments data here
-                            propertyAppointments={propertyAppointments}
-                        />
-                    )} */}
+            {activeSection === "appointments" && (
+              <Dashboard
+                activeTab="appointments"
+                userListings={userListings}
+                userAppointments={userAppointments} 
+                propertyAppointments={userAppointments}
+              />
+            )}
 
             {activeSection === "settings" && (
               <div className="bg-white rounded-xl shadow-sm p-6">
@@ -495,10 +491,28 @@ const Dashboard = ({
   activeTab,
   userListings,
   userAppointments,
-  handleListingDelete,
   Loading,
-  error
+  error,
+  setUserListings,
 }) => {
+    const handleListingDelete = async (listingId) => {
+        try {
+          const res = await fetch(`/api/listing/delete/${listingId}`, {
+            method: "DELETE",
+          });
+          const data = await res.json();
+          if (data.success === false) {
+            console.log(data.message);
+            return;
+          }
+    
+          setUserListings((prev) =>
+            prev.filter((listing) => listing._id !== listingId)
+          );
+        } catch (error) {
+          console.log(error.message);
+        }
+      };
   return (
     <div className="bg-white rounded-xl shadow-sm p-6">
       <h2 className="text-xl font-semibold text-gray-800 mb-6">
@@ -552,80 +566,92 @@ const Dashboard = ({
         </ul>
       )}
 
-  {activeTab === 'appointments' && (
+      {activeTab === "appointments" && (
         <div className="lg:col-span-3">
           <div className="bg-white rounded-xl shadow-sm p-6">
             <h2 className="text-xl font-semibold text-gray-800 mb-6">
               My Appointments
             </h2>
-            
+
             {Loading && (
               <div className="text-center py-4">
                 <p>Loading appointments...</p>
               </div>
             )}
-            
+
             {error && (
               <div className="text-red-500 text-center py-4">
                 <p>Error: {error}</p>
               </div>
             )}
-            
-            {!Loading && !error && (!userAppointments || userAppointments.length === 0) && (
-              <div className="text-center py-4">
-                <p>No appointments found.</p>
-              </div>
-            )}
-            
-            {!Loading && !error && userAppointments && userAppointments.length > 0 && (
-              <div className="space-y-4">
-                {userAppointments.map((appointment) => (
-                  <div 
-                    key={appointment._id} 
-                    className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="text-lg font-semibold">
-                          Order #{appointment.orderId}
-                        </h3>
-                        <div className="mt-2 space-y-2">
-                          <p className="text-sm text-gray-600">
-                            Amount: {appointment.amount} {appointment.currency}
-                          </p>
-                          {appointment.propertyId && (
-                            <>
-                              <p className="text-sm text-gray-600">
-                                Property: {appointment.propertyId.name}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                Location: {appointment.propertyId.location}
-                              </p>
-                            </>
-                          )}
-                          <p className="text-sm text-gray-600">
-                            Date: {new Date(appointment.createdAt).toLocaleDateString()}
-                          </p>
+
+            {!Loading &&
+              !error &&
+              (!userAppointments || userAppointments.length === 0) && (
+                <div className="text-center py-4">
+                  <p>No appointments found.</p>
+                </div>
+              )}
+
+            {!Loading &&
+              !error &&
+              userAppointments &&
+              userAppointments.length > 0 && (
+                <div className="space-y-4">
+                  {userAppointments.map((appointment) => (
+                    <div
+                      key={appointment._id}
+                      className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="text-lg font-semibold">
+                            Order #{appointment.orderId}
+                          </h3>
+                          <div className="mt-2 space-y-2">
+                            <p className="text-sm text-gray-600">
+                              Amount: {appointment.amount}{" "}
+                              {appointment.currency}
+                            </p>
+                            {appointment.propertyId && (
+                              <>
+                                <p className="text-sm text-gray-600">
+                                  Property: {appointment.propertyId.name}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  Location: {appointment.propertyId.location}
+                                </p>
+                              </>
+                            )}
+                            <p className="text-sm text-gray-600">
+                              Date:{" "}
+                              {new Date(
+                                appointment.createdAt
+                              ).toLocaleDateString()}
+                            </p>
+                          </div>
                         </div>
-                      </div>
-                      <span 
-                        className={`px-3 py-1 rounded-full text-sm font-medium
+                        <span
+                          className={`px-3 py-1 rounded-full text-sm font-medium
                           ${
-                            appointment.status === 'completed' ? 'bg-green-100 text-green-800' :
-                            appointment.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-gray-100 text-gray-800'
+                            appointment.status === "completed"
+                              ? "bg-green-100 text-green-800"
+                              : appointment.status === "pending"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-gray-100 text-gray-800"
                           }`}
-                      >
-                        {appointment.status.charAt(0).toUpperCase() + appointment.status.slice(1)}
-                      </span>
+                        >
+                          {appointment.status.charAt(0).toUpperCase() +
+                            appointment.status.slice(1)}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
+                  ))}
+                </div>
+              )}
           </div>
         </div>
       )}
     </div>
   );
-}
+};

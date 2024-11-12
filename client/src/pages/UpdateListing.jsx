@@ -8,8 +8,9 @@ import {
 import { app } from '../firebase';
 import { useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Upload, Trash, CheckCircle, XCircle } from 'lucide-react';
 
-export default function CreateListing() {
+export default function UpdateListing() {
   const { currentUser } = useSelector((state) => state.user);
   const navigate = useNavigate();
   const params = useParams();
@@ -56,9 +57,24 @@ export default function CreateListing() {
     };
 
     fetchListing();
+  }, [params.listingId]);
+
+  useEffect(() => {
+    const fetchListing = async () => {
+      const listingId = params.listingId;
+      const res = await fetch(`/api/listing/get/${listingId}`);
+      const data = await res.json();
+      if (data.success === false) {
+        console.log(data.message);
+        return;
+      }
+      setFormData(data);
+    };
+
+    fetchListing();
   }, []);
 
-  const handleImageSubmit = (e) => {
+  const handleImageSubmit = () => {
     if (files.length > 0 && files.length + formData.imageUrls.length < 7) {
       setUploading(true);
       setImageUploadError(false);
@@ -76,7 +92,7 @@ export default function CreateListing() {
           setImageUploadError(false);
           setUploading(false);
         })
-        .catch((err) => {
+        .catch(() => {
           setImageUploadError('Image upload failed (2 mb max per image)');
           setUploading(false);
         });
@@ -179,301 +195,342 @@ export default function CreateListing() {
       setLoading(false);
     }
   };
+
   return (
-    <main className='p-3 max-w-4xl mx-auto'>
-      <h1 className='text-3xl font-semibold text-center my-7'>
-        Update a Listing
-      </h1>
-      <form onSubmit={handleSubmit} className='flex flex-col sm:flex-row gap-4'>
-        <div className='flex flex-col gap-4 flex-1'>
-          <input
-            type='text'
-            placeholder='Name'
-            className='border p-3 rounded-lg'
-            id='name'
-            maxLength='62'
-            minLength='10'
-            required
-            onChange={handleChange}
-            value={formData.name}
-          />
-          <textarea
-            type='text'
-            placeholder='Description'
-            className='border p-3 rounded-lg'
-            id='description'
-            required
-            onChange={handleChange}
-            value={formData.description}
-          />
-          <input
-            type='text'
-            placeholder='Address'
-            className='border p-3 rounded-lg'
-            id='address'
-            required
-            onChange={handleChange}
-            value={formData.address}
-          />
-          <div className='flex gap-6 flex-wrap'>
-            <div className='flex gap-2'>
-              <input
-                type='checkbox'
-                id='sale'
-                className='w-5'
-                onChange={handleChange}
-                checked={formData.type === 'sale'}
-              />
-              <span>Sell</span>
-            </div>
-            <div className='flex gap-2'>
-              <input
-                type='checkbox'
-                id='rent'
-                className='w-5'
-                onChange={handleChange}
-                checked={formData.type === 'rent'}
-              />
-              <span>Rent</span>
-            </div>
-            <div className='flex gap-2'>
-              <input
-                type='checkbox'
-                id='parking'
-                className='w-5'
-                onChange={handleChange}
-                checked={formData.parking}
-              />
-              <span>Parking spot</span>
-            </div>
-            <div className='flex gap-2'>
-              <input
-                type='checkbox'
-                id='furnished'
-                className='w-5'
-                onChange={handleChange}
-                checked={formData.furnished}
-              />
-              <span>Furnished</span>
-            </div>
-            
-            <span> <b>Select here a property type :-</b></span>
-            <div className='flex gap-2'>
-              <input
-                type='checkbox'
-                id='villa'
-                className='w-5'
-                onChange={handleChange}
-                checked={formData.villa}
-              />
-              <span>Villa</span>
-            </div>
-             <div className='flex gap-2'>
-              <input
-                type='checkbox'
-                id='bunglow'
-                className='w-5'
-                onChange={handleChange}
-                checked={formData.bunglow}
-              />
-              <span>Bunglow</span>
-            </div>
-            <div className='flex gap-2'>
-              <input
-                type='checkbox'
-                id='townhouse'
-                className='w-5'
-                onChange={handleChange}
-                checked={formData.townhouse}
-              />
-              <span>Townhouse</span>
-            </div>
-            <div className='flex gap-2'>
-              <input
-                type='checkbox'
-                id='appartment'
-                className='w-5'
-                onChange={handleChange}
-                checked={formData.appartment}
-              />
-              <span>Appartment</span>
-            </div>
-            <div className='flex gap-2'>
-              <input
-                type='checkbox'
-                id='condominum'
-                className='w-5'
-                onChange={handleChange}
-                checked={formData.condominum}
-              />
-              <span>Condominum</span>
-            </div>
-            
-            <div className='flex gap-2'>
-              <input
-                type='checkbox'
-                id='duplex'
-                className='w-5'
-                onChange={handleChange}
-                checked={formData.duplex}
-              />
-              <span>Duplex</span>
-            </div>
-            <div className='flex gap-2'>
-              <input
-                type='checkbox'
-                id='triplex'
-                className='w-5'
-                onChange={handleChange}
-                checked={formData.triplex}
-              />
-              <span>Triplex</span>
-            </div>
-            <div className='flex gap-2'>
-              <input
-                type='checkbox'
-                id='other'
-                className='w-5'
-                onChange={handleChange}
-                checked={formData.other}
-              />
-              <span>Other</span>
-            </div>
-            
+    <main className="p-6 max-w-4xl mx-auto">
+      <h1 className="text-3xl font-semibold text-center my-7">Update a Listing</h1>
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <div className="flex flex-col gap-4">
+            <input
+              type="text"
+              placeholder="Name"
+              className="border p-3 rounded-lg"
+              id="name"
+              maxLength="62"
+              minLength="10"
+              required
+              onChange={handleChange}
+              value={formData.name}
+            />
+            <textarea
+              type="text"
+              placeholder="Description"
+              className="border p-3 rounded-lg"
+              id="description"
+              required
+              onChange={handleChange}
+              value={formData.description}
+            />
+            <input
+              type="text"
+              placeholder="Address"
+              className="border p-3 rounded-lg"
+              id="address"
+              required
+              onChange={handleChange}
+              value={formData.address}
+            />
           </div>
-          <div className='flex gap-2'>
+          <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="sale"
+                  className="w-5"
+                  onChange={handleChange}
+                  checked={formData.type === 'sale'}
+                />
+                <span>Sell</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="rent"
+                  className="w-5"
+                  onChange={handleChange}
+                  checked={formData.type === 'rent'}
+                />
+                <span>Rent</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="parking"
+                  className="w-5"
+                  onChange={handleChange}
+                  checked={formData.parking}
+                />
+                <span>Parking spot</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="furnished"
+                  className="w-5"
+                  onChange={handleChange}
+                  checked={formData.furnished}
+                />
+                <span>Furnished</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="villa"
+                  className="w-5"
+                  onChange={handleChange}
+                  checked={formData.villa}
+                />
+                <span>Villa</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="bunglow"
+                  className="w-5"
+                  onChange={handleChange}
+                  checked={formData.bunglow}
+                />
+                <span>Bunglow</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="townhouse"
+                  className="w-5"
+                  onChange={handleChange}
+                  checked={formData.townhouse}
+                />
+                <span>Townhouse</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="appartment"
+                  className="w-5"
+                  onChange={handleChange}
+                  checked={formData.appartment}
+                />
+                <span>Appartment</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="condominum"
+                  className="w-5"
+                  onChange={handleChange}
+                  checked={formData.condominum}
+                />
+                <span>Condominum</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="duplex"
+                  className="w-5"
+                  onChange={handleChange}
+                  checked={formData.duplex}
+                />
+                <span>Duplex</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="triplex"
+                  className="w-5"
+                  onChange={handleChange}
+                  checked={formData.triplex}
+                />
+                <span>Triplex</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="other"
+                  className="w-5"
+                  onChange={handleChange}
+                  checked={formData.other}
+                />
+                <span>Other</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
               <input
-                type='checkbox'
-                id='offer'
-                className='w-5'
+                type="checkbox"
+                id="offer"
+                className="w-5"
                 onChange={handleChange}
                 checked={formData.offer}
               />
               <span>Offer</span>
             </div>
-          <div className='flex flex-wrap gap-6'>
-            <div className='flex items-center gap-2'>
-              <input
-                type='number'
-                id='bedrooms'
-                min='1'
-                max='10'
-                required
-                className='p-3 border border-gray-300 rounded-lg'
-                onChange={handleChange}
-                value={formData.bedrooms}
-              />
-              <p>Beds</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              id="bedrooms"
+              min="1"
+              max="10"
+              required
+              className="p-3 border border-gray-300 rounded-lg"
+              onChange={handleChange}
+              value={formData.bedrooms}
+            />
+            <p>Beds</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              id="bathrooms"
+              min="1"
+              max="10"
+              required
+              className="p-3 border border-gray-300 rounded-lg"
+              onChange={handleChange}
+              value={formData.bathrooms}
+            />
+            <p>Baths</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="number"
+              id="regularPrice"
+              min="50"
+              max="10000000"
+              required
+              className="p-3 border border-gray-300 rounded-lg"
+              onChange={handleChange}
+              value={formData.regularPrice}
+            />
+            <div className="flex flex-col items-center">
+              <p>Regular price</p>
+              {formData.type === 'rent' && (
+                <span className="text-xs">($ / month)</span>
+              )}
             </div>
-            <div className='flex items-center gap-2'>
+          </div>
+        </div>
+
+        {formData.offer && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="flex items-center gap-2">
               <input
-                type='number'
-                id='bathrooms'
-                min='1'
-                max='10'
+                type="number"
+                id="discountPrice"
+                min="0"
+                max="10000000"
                 required
-                className='p-3 border border-gray-300 rounded-lg'
+                className="p-3 border border-gray-300 rounded-lg"
                 onChange={handleChange}
-                value={formData.bathrooms}
+                value={formData.discountPrice}
               />
-              <p>Baths</p>
-            </div>
-            <div className='flex items-center gap-2'>
-              <input
-                type='number'
-                id='regularPrice'
-                min='50'
-                max='10000000'
-                required
-                className='p-3 border border-gray-300 rounded-lg'
-                onChange={handleChange}
-                value={formData.regularPrice}
-              />
-              <div className='flex flex-col items-center'>
-                <p>Regular price</p>
+              <div className="flex flex-col items-center">
+                <p>Discounted price</p>
                 {formData.type === 'rent' && (
-                  <span className='text-xs'>($ / month)</span>
+                  <span className="text-xs">($ / month)</span>
                 )}
               </div>
             </div>
-            {formData.offer && (
-              <div className='flex items-center gap-2'>
-                <input
-                  type='number'
-                  id='discountPrice'
-                  min='0'
-                  max='10000000'
-                  required
-                  className='p-3 border border-gray-300 rounded-lg'
-                  onChange={handleChange}
-                  value={formData.discountPrice}
-                />
-                <div className='flex flex-col items-center'>
-                  <p>Discounted price</p>
-                  {formData.type === 'rent' && (
-                    <span className='text-xs'>($ / month)</span>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
-        </div>
-        <div className='flex flex-col flex-1 gap-4'>
-          <p className='font-semibold'>
+        )}
+
+        <div className="flex flex-col gap-4">
+          <p className="font-semibold">
             Images:
-            <span className='font-normal text-gray-600 ml-2'>
+            <span className="font-normal text-gray-600 ml-2">
               The first image will be the cover (max 6)
             </span>
           </p>
-          <div className='flex gap-4'>
+          <div className="flex gap-4">
+            <label
+              htmlFor="images"
+              className="flex items-center justify-center gap-2 p-3 border border-green-700 rounded-lg text-green-700 hover:shadow-lg cursor-pointer"
+            >
+              <Upload className="w-5 h-5" />
+              <span>Upload Images</span>
+            </label>
             <input
               onChange={(e) => setFiles(e.target.files)}
-              className='p-3 border border-gray-300 rounded w-full'
-              type='file'
-              id='images'
-              accept='image/*'
+              className="hidden"
+              type="file"
+              id="images"
+              accept="image/*"
               multiple
             />
             <button
-              type='button'
+              type="button"
               disabled={uploading}
               onClick={handleImageSubmit}
-              className='p-3 text-green-700 border border-green-700 rounded uppercase hover:shadow-lg disabled:opacity-80'
+              className="p-3 flex items-center justify-center gap-2 text-green-700 border border-green-700 rounded-lg uppercase hover:shadow-lg disabled:opacity-80"
             >
-              {uploading ? 'Uploading...' : 'Upload'}
+              {uploading ? (
+                <>
+                  <CheckCircle className="w-5 h-5" />
+                  <span>Uploading...</span>
+                </>
+              ) : (
+                <>
+                  <Upload className="w-5 h-5" />
+                  <span>Upload</span>
+                </>
+              )}
             </button>
           </div>
-          <p className='text-red-700 text-sm'>
+          <p className="text-red-700 text-sm">
             {imageUploadError && imageUploadError}
           </p>
-          {formData.imageUrls.length > 0 &&
-            formData.imageUrls.map((url, index) => (
-              <div
-                key={url}
-                className='flex justify-between p-3 border items-center'
-              >
-                <img
-                  src={url}
-                  alt='listing image'
-                  className='w-20 h-20 object-contain rounded-lg'
-                />
-                <button
-                  type='button'
-                  onClick={() => handleRemoveImage(index)}
-                  className='p-3 text-red-700 rounded-lg uppercase hover:opacity-75'
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            {formData.imageUrls.length > 0 &&
+              formData.imageUrls.map((url, index) => (
+                <div
+                  key={url}
+                  className="flex justify-between items-center p-3 border rounded-lg"
                 >
-                  Delete
-                </button>
-              </div>
-            ))}
-          <button
-            disabled={loading || uploading}
-            className='p-3 bg-slate-700 text-white rounded-lg uppercase hover:opacity-95 disabled:opacity-80'
-          >
-            {loading ? 'Updating...' : 'Update listing'}
-          </button>
-          {error && <p className='text-red-700 text-sm'>{error}</p>}
+                  <img
+                    src={url}
+                    alt="listing image"
+                    className="w-20 h-20 object-contain rounded-lg"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveImage(index)}
+                    className="p-2 text-red-700 rounded-lg hover:bg-red-100"
+                  >
+                    <Trash className="w-5 h-5" />
+                  </button>
+                </div>
+              ))}
+          </div>
         </div>
+
+        <button
+          disabled={loading || uploading}
+          className="p-3 bg-slate-700 text-white rounded-lg uppercase hover:opacity-95 disabled:opacity-80"
+        >
+          {loading ? (
+            <>
+              <CheckCircle className="w-5 h-5 mr-2" />
+              <span>Updating...</span>
+            </>
+          ) : (
+            <>
+              <CheckCircle className="w-5 h-5 mr-2" />
+              <span>Update listing</span>
+            </>
+          )}
+        </button>
+        {error && (
+          <div className="flex items-center gap-2 text-red-700">
+            <XCircle className="w-5 h-5" />
+            <span>{error}</span>
+          </div>
+        )}
       </form>
     </main>
   );

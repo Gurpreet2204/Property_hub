@@ -1,16 +1,26 @@
+/* eslint-disable no-unused-vars */
 /* eslint-disable react/no-unknown-property */
-import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useParams } from 'react-router-dom';
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-import { Calendar, Clock, User, Mail, Phone, CheckCircle, X } from 'lucide-react';
+import { useState, useEffect } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
+import {
+  Calendar,
+  Clock,
+  User,
+  Mail,
+  Phone,
+  CheckCircle,
+  X,
+  Lock,
+} from "lucide-react";
 
 const AppointmentForm = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [amount, setAmount] = useState('')
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [amount, setAmount] = useState("");
   const [selectedDate, setSelectedDate] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const [appointments, setAppointments] = useState([]);
@@ -21,14 +31,14 @@ const AppointmentForm = () => {
   const [error, setError] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const params = useParams();
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const checkAvailability = async () => {
     try {
-      const response = await fetch('/api/checkAvailability', {
-        method: 'POST',
+      const response = await fetch("/api/checkAvailability", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           name,
@@ -36,21 +46,21 @@ const AppointmentForm = () => {
           phone,
           selectedDate,
           duration: 60,
-          appointmentFees:amount
+          appointmentFees: amount,
         }),
       });
 
       if (!response.ok) {
         const data = await response.text();
-        alert(data || 'Error checking availability. Please try again.');
+        alert(data || "Error checking availability. Please try again.");
         return false;
       }
 
       const data = await response.json();
       return data || false;
     } catch (error) {
-      console.error('Error checking availability:', error);
-      alert('Error checking availability. Please try again.');
+      console.error("Error checking availability:", error);
+      alert("Error checking availability. Please try again.");
       return false;
     }
   };
@@ -60,7 +70,10 @@ const AppointmentForm = () => {
     const isAvailable = await checkAvailability();
     if (!isAvailable) return;
 
-    setAppointments([...appointments, { date: new Date(selectedDate), duration: 60 }]);
+    setAppointments([
+      ...appointments,
+      { date: new Date(selectedDate), duration: 60 },
+    ]);
     setSubmitted(true);
   };
 
@@ -86,84 +99,83 @@ const AppointmentForm = () => {
     fetchListing();
   }, [params.listingId]);
 
-  const handleOpenRazorpay = (data) => {
+  const handlePayment = async () => {
+    try {
+      const amountInPaise = listing.appointmentFees;
+
+      const response = await fetch("/api/orders/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          appointmentFees: amountInPaise,
+          status: "created",
+          currency: "INR",
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.data) {
+          handleOpenRazorpay(data.data);
+        } else {
+          console.error("Invalid response format:", data);
+        }
+      } else {
+        const error = await response.json();
+        console.error("Failed to create order:", error);
+      }
+    } catch (error) {
+      console.error("Error in handlePayment:", error);
+    }
+  };
+
+  const handleOpenRazorpay = (orderData) => {
+    console.log("Order data received:", orderData);
+
     const options = {
-      key: import.meta.env.VITE_RAZORPAY_KEY,
-      amount: Number(data.amount) * 100,
-      currency: data.currency,
-      order_id: data.id,
+      key: "rzp_test_0o4NhN2bWbS3HN",
+      amount: orderData.amount,
+      currency: orderData.currency,
+      name: listing.name || "Appointment Booking",
+      description: "Appointment Booking Payment",
+      order_id: orderData.id,
       handler: async function (response) {
         try {
-          const res = await fetch("/api/verify", { 
-            method: 'POST',
+          const verifyResponse = await fetch("/api/verify", {
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
-            body: JSON.stringify({ response }),
+            body: JSON.stringify({
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_signature: response.razorpay_signature,
+            }),
           });
-          
-          if (res.ok) {
+
+          const verifyData = await verifyResponse.json();
+
+          if (verifyResponse.ok && verifyData.code === 200) {
             setPaymentSuccess(true);
             setShowSuccess(true);
-            // Reset form after successful payment
-            setName('');
-            setEmail('');
-            setPhone('');
-            setSelectedDate(null);
-            setSubmitted(false);
-            
-            // Hide success message after 5 seconds
-            setTimeout(() => {
-              setShowSuccess(false);
-              setShowForm(false);
-            }, 5000);
+            navigate("/");
+          } else {
+            console.error("Payment verification failed:", verifyData.message);
           }
         } catch (err) {
-          console.log("Error:", err);
+          console.error("Error during payment verification:", err);
         }
-      }
+      },
+      prefill: {
+        name: name,
+        email: email,
+        contact: phone,
+      },
     };
+
     const rzp = new window.Razorpay(options);
     rzp.open();
   };
-
-  const handlePayment = async () => {
-    const appointmentFees = 100; // Set this to the desired appointment fee
-    const orderId = `receipt#${Math.floor(Math.random() * 1000)}`; // Generate a random receipt ID
-    const status = "Pending"; // Set a default status if needed
-    const createdAt = new Date().toISOString(); // Current timestamp
-
-    try {
-        const response = await fetch('/api/orders/create', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                appointmentFees, // Send appointmentFees
-                status,          // Send status
-                orderId,        // Send orderId
-                createdAt,      // Send createdAt
-            }),
-        });
-
-        if (!response.ok) {
-            const errorData = await response.json();
-            alert(`Error: ${errorData.message || 'An error occurred'}`);
-            return;
-        }
-
-        const orderData = await response.json();
-        console.log('Order created successfully:', orderData);
-        // Handle further logic after order creation (like redirecting to payment)
-        handleOpenRazorpay(orderData)
-        
-    } catch (error) {
-        console.error('Error during payment:', error);
-        alert('An unexpected error occurred. Please try again.');
-    }
-};
-
   return (
     <div className="p-4 sm:p-6 md:p-8">
       <div className="max-w-2xl mx-auto relative">
@@ -173,143 +185,170 @@ const AppointmentForm = () => {
             <div className="flex items-center">
               <CheckCircle className="w-6 h-6 text-green-500 mr-3" />
               <div>
-                <h3 className="text-green-800 font-medium">Payment Successful!</h3>
-                <p className="text-green-600 text-sm">Your appointment has been booked.</p>
+                <h3 className="text-green-800 font-medium">
+                  Payment Successful!
+                </h3>
+                <p className="text-green-600 text-sm">
+                  Your appointment has been booked.
+                </p>
               </div>
             </div>
           </div>
         )}
 
-        <button
-          onClick={() => setShowForm(!showForm)}
-          className={`w-full p-4 rounded-lg shadow-md transition-all duration-300 flex items-center justify-center gap-2 ${
-            showForm 
-              ? 'bg-red-500 hover:bg-red-600 text-white' 
-              : 'bg-green-500 hover:bg-green-600 text-white'
-          }`}
-        >
-          {showForm ? (
-            <>
-              <X className="w-5 h-5" />
-              Close Form
-            </>
-          ) : (
-            <>
-              <Calendar className="w-5 h-5" />
-              Book Your Appointment
-            </>
-          )}
-        </button>
+        {paymentSuccess ? (
+          <div className="text-center py-8 animate-fade-in">
+            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4 animate-bounce" />
+            <h3 className="text-2xl font-semibold text-gray-800 mb-4">
+              Thank You!
+            </h3>
+            <p className="text-gray-600 mb-6">
+              Your appointment has been successfully booked and confirmed.
+            </p>
+            <Link
+              to="/profile"
+              className="inline-block px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-300"
+            >
+              View My Appointments
+            </Link>
+          </div>
+        ) : submitted ? (
+          <div className="text-center py-12 px-6 bg-gradient-to-br from-green-50 to-blue-50 rounded-xl shadow-sm border border-gray-100">
+            <div className="mb-8 animate-bounce">
+              <Calendar className="w-16 h-16 text-green-500 mx-auto" />
+            </div>
 
-        {showForm && (
-          <div className="mt-6 bg-white rounded-xl shadow-lg overflow-hidden transition-all duration-300">
-            <div className="p-6 sm:p-8">
-              <h2 className="text-3xl font-bold text-gray-800 mb-2">Book Your Appointment</h2>
-              <p className="text-gray-500 mb-8">Fill in your details to schedule an appointment</p>
+            <h3 className="text-3xl font-bold text-gray-800 mb-4 flex items-center justify-center gap-2">
+              <CheckCircle className="w-6 h-6 text-green-500" />
+              Complete Your Booking
+            </h3>
 
-              {paymentSuccess ? (
-                <div className="text-center py-8 animate-fade-in">
-                  <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4 animate-bounce" />
-                  <h3 className="text-2xl font-semibold text-gray-800 mb-4">Thank You!</h3>
-                  <p className="text-gray-600 mb-6">Your appointment has been successfully booked and confirmed.</p>
-                  <Link 
-                    to="/profile"
-                    className="inline-block px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors duration-300"
-                  >
-                    View My Appointments
-                  </Link>
+            <div className="space-y-6">
+              <p className="text-gray-600 text-lg leading-relaxed max-w-md mx-auto">
+                Please proceed with the payment to confirm your appointment
+              </p>
+
+              <div className="flex flex-col items-center gap-4">
+                <div className="flex items-center gap-2 text-gray-500 bg-white px-4 py-2 rounded-lg shadow-sm">
+                  <Clock className="w-5 h-5 text-blue-500" />
+                  <span>Appointment Duration: 60 minutes</span>
                 </div>
-              ) : submitted ? (
-                <div className="text-center py-8">
-                  <h3 className="text-2xl font-semibold text-gray-800 mb-4">Complete Your Booking</h3>
-                  <p className="text-gray-600 mb-6">Please proceed with the payment to confirm your appointment.</p>
-                  <button 
-                    onClick={() => handlePayment(listing.appointmentFees)}
-                    className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-300"
-                  >
-                    Pay ₹{listing.appointmentFees}
-                    
-                  </button>
+
+                <div className="flex items-center gap-2 text-gray-500 bg-white px-4 py-2 rounded-lg shadow-sm">
+                  <Calendar className="w-5 h-5 text-blue-500" />
+                  <span>
+                    {selectedDate?.toLocaleDateString("en-US", {
+                      weekday: "long",
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
                 </div>
-              ) : (
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <div className="space-y-6">
-                    <div>
-                      <label className="flex items-center gap-2 text-gray-700 mb-2">
-                        <User className="w-4 h-4" />
-                        <span>Name</span>
-                      </label>
-                      <input
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300"
-                        required
-                      />
-                    </div>
+              </div>
 
-                    <div>
-                      <label className="flex items-center gap-2 text-gray-700 mb-2">
-                        <Mail className="w-4 h-4" />
-                        <span>Email</span>
-                      </label>
-                      <input
-                        type="email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300"
-                        required
-                      />
-                    </div>
+              <div className="mt-8">
+                <button
+                  onClick={() => handlePayment()}
+                  className="group relative inline-flex items-center justify-center gap-3 px-8 py-4 bg-green-500 text-white rounded-xl hover:bg-green-600 transition-all duration-300 shadow-lg hover:shadow-xl hover:-translate-y-0.5"
+                >
+                  <span className="absolute inset-0 w-full h-full rounded-xl bg-gradient-to-br from-green-400 to-green-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
+                  <span className="relative flex items-center gap-2">
+                    <span className="text-lg font-semibold">
+                      Pay ₹{listing.appointmentFees}
+                    </span>
+                    <CheckCircle className="w-5 h-5 animate-pulse" />
+                  </span>
+                </button>
+              </div>
 
-                    <div>
-                      <label className="flex items-center gap-2 text-gray-700 mb-2">
-                        <Phone className="w-4 h-4" />
-                        <span>Phone</span>
-                      </label>
-                      <input
-                        type="tel"
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300"
-                        required
-                      />
-                    </div>
-
-                    <div>
-                      <label className="flex items-center gap-2 text-gray-700 mb-2">
-                        <Calendar className="w-4 h-4" />
-                        <span>Preferred Date and Time</span>
-                      </label>
-                      <div className="relative">
-                        <DatePicker
-                          selected={selectedDate}
-                          onChange={(date) => setSelectedDate(date)}
-                          showTimeSelect
-                          timeFormat="HH:mm"
-                          dateFormat="MMMM d, yyyy h:mm aa"
-                          className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300"
-                          required
-                        />
-                        <Clock className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4" />
-                      </div>
-                    </div>
-                  </div>
-
-                  <button 
-                    type="submit"
-                    className="w-full px-6 py-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transform hover:-translate-y-0.5 transition-all duration-300"
-                  >
-                    Submit Appointment Request
-                  </button>
-                </form>
-              )}
+              <p className="text-sm text-gray-500 mt-4">
+                <Lock className="w-4 h-4 inline mr-1 text-gray-400" />
+                Secure payment powered by Razorpay
+              </p>
             </div>
           </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-6">
+              <div>
+                <label className="flex items-center gap-2 text-gray-700 mb-2">
+                  <User className="w-4 h-4" />
+                  <span>Name</span>
+                </label>
+                <input
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 text-gray-700 mb-2">
+                  <Mail className="w-4 h-4" />
+                  <span>Email</span>
+                </label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 text-gray-700 mb-2">
+                  <Phone className="w-4 h-4" />
+                  <span>Phone</span>
+                </label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="flex items-center gap-2 text-gray-700 mb-2">
+                  <Calendar className="w-4 h-4" />
+                  <span>Preferred Date and Time</span>
+                </label>
+                <div className="relative">
+                  <DatePicker
+                    selected={selectedDate}
+                    onChange={(date) => setSelectedDate(date)}
+                    showTimeSelect
+                    timeFormat="HH:mm"
+                    dateFormat="MMMM d, yyyy h:mm aa"
+                    className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-300"
+                    required
+                  />
+                  <Clock className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 pointer-events-none w-4 h-4" />
+                </div>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="w-full px-6 py-4 bg-green-500 text-white rounded-lg hover:bg-green-600 transform hover:-translate-y-0.5 transition-all duration-300"
+            >
+              Submit Appointment Request
+            </button>
+          </form>
         )}
       </div>
+    </div>
+  );
+};
 
-      <style>{`
+<style>{`
         @keyframes slide-in-top {
           0% {
             transform: translateY(-1rem);
@@ -330,9 +369,6 @@ const AppointmentForm = () => {
           0% { opacity: 0; }
           100% { opacity: 1; }
         }
-      `}</style>
-    </div>
-  );
-};
+      `}</style>;
 
 export default AppointmentForm;

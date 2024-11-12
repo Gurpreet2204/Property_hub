@@ -18,7 +18,6 @@ import {
 const Dashboard = ({ userListings, userAppointments, propertyAppointments }) => {
   const [activeTab, setActiveTab] = useState('listings');
   
-  // Format date to readable string
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       weekday: 'short',
@@ -30,7 +29,6 @@ const Dashboard = ({ userListings, userAppointments, propertyAppointments }) => 
     });
   };
 
-  // Function to determine status color
   const getStatusColor = (status) => {
     switch (status) {
       case 'confirmed':

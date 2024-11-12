@@ -18,7 +18,6 @@ const app = express();
 app.use(cookieParser());
 app.use(express.json());
 
-// CORS Configuration
 app.use(
   cors({
     origin: "*",
@@ -26,20 +25,17 @@ app.use(
   })
 );
 
-// MongoDB Connection
 mongoose
-  .connect("mongodb+srv://gurs2806:Mongopass@cluster0.rif0rjt.mongodb.net/propertyhub")
+  .connect(process.env.MONGO)
   .then(() => console.log("Connected to MongoDB!"))
   .catch((err) => console.error("MongoDB connection error:", err));
 
-// Define Routes
 app.use("/api/user", userRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/listing", listingRouter);
 app.use("/api/orders", orderRouter);
 app.use("/api/appointments", appointmentRouter)
 
-// Appointment Schema & Check Availability Route
 const Appointment = mongoose.model("Appointment", {
   name: String,
   email: String,
@@ -83,7 +79,6 @@ app.post("/api/checkAvailability", async (req, res) => {
   }
 });
 
-// Razorpay Signature Verification
 app.post(
   "/api/verify",
   body("response.razorpay_order_id").notEmpty(),
@@ -110,14 +105,12 @@ app.post(
   }
 );
 
-// Serve Static Files for SPA
 const __dirname = path.resolve();
 app.use(express.static(path.join(__dirname, "/client/dist")));
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "client", "dist", "index.html"));
 });
 
-// Error Handling Middleware
 app.use((err, req, res, next) => {
   console.error("Error:", err);
   const statusCode = err.statusCode || 500;
@@ -125,7 +118,7 @@ app.use((err, req, res, next) => {
   return res.status(statusCode).json({ success: false, statusCode, message });
 });
 
-// Start Server
+
 app.listen(3001, () => {
   console.log("Server is running on port 3001!");
 });
