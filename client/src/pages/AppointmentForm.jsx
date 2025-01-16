@@ -15,8 +15,10 @@ import {
   X,
   Lock,
 } from "lucide-react";
+import { useSelector } from "react-redux";
 
 const AppointmentForm = () => {
+ const { currentUser } = useSelector((state) => state.user);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -110,6 +112,8 @@ const AppointmentForm = () => {
           appointmentFees: amountInPaise,
           status: "created",
           currency: "INR",
+          Userid:currentUser._id,
+          
         }),
       });
 
@@ -176,6 +180,7 @@ const AppointmentForm = () => {
     const rzp = new window.Razorpay(options);
     rzp.open();
   };
+  console.log('currentUser----------->', currentUser._id);
   return (
     <div className="p-4 sm:p-6 md:p-8">
       <div className="max-w-2xl mx-auto relative">

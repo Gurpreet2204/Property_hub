@@ -50,7 +50,7 @@ export default function Profile() {
   const [userAppointments, setUserAppointments] = useState([]);
   const [Loading, setLoading] = useState(true);
   const [Error, setError] = useState(null);
-  const navigate = useNavigate()
+  const navigate = useNavigate();
   const dispatch = useDispatch();
   useEffect(() => {
     if (file) {
@@ -141,9 +141,9 @@ export default function Profile() {
       dispatch(deleteUserFailure(data.message));
     }
   };
-  const handleCreateListing = ()=>{
-    navigate("/create-listing")
-  }
+  const handleCreateListing = () => {
+    navigate("/create-listing");
+  };
 
   useEffect(() => {
     const handleShowListings = async () => {
@@ -153,7 +153,7 @@ export default function Profile() {
         const res = await fetch(`/api/user/listings/${currentUser._id}`, {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
-          }, 
+          },
         });
         const data = await res.json();
 
@@ -176,21 +176,23 @@ export default function Profile() {
     const fetchUserAppointments = async () => {
       try {
         setLoading(true);
-        const response = await fetch("/api/appointments/my-appointments", {
+        const response = await fetch("/api/orders/get", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
           credentials: "include",
         });
 
-        const data = await response.json();
-        console.log("Appointments data:", data); 
+        const appointmentsData = await response.json();
+        console.log("Appointments data:", appointmentsData.data);
 
         if (!response.ok) {
-          throw new Error(data.message || "Failed to fetch appointments");
+          throw new Error(
+            appointmentsData.message || "Failed to fetch appointments"
+          );
         }
 
-        setUserAppointments(data.appointments || []);
+        setUserAppointments(appointmentsData || []);
       } catch (error) {
         console.error("Error fetching appointments:", error);
         setError(error.message);
@@ -201,29 +203,27 @@ export default function Profile() {
 
     fetchUserAppointments();
   }, []);
-  useEffect(() => {
-    const createTestAppointment = async () => {
-      try {
-        const response = await fetch("/api/appointments/my-appointments", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          body: JSON.stringify({
-            userId: currentUser._id,
-          }),
-        });
-        const data = await response.json();
-        console.log("Test appointment created:", data);
-      } catch (error) {
-        console.error("Error creating test appointment:", error);
-      }
-    };
-    createTestAppointment();
-  }, []);
-
-  
+  //   useEffect(() => {
+  //     const createTestAppointment = async () => {
+  //       try {
+  //         const response = await fetch("/api/appointments/my-appointments", {
+  //           method: "POST",
+  //           headers: {
+  //             "Content-Type": "application/json",
+  //             Authorization: `Bearer ${localStorage.getItem("token")}`,
+  //           },
+  //           body: JSON.stringify({
+  //             userId: currentUser._id,
+  //           }),
+  //         });
+  //         const data = await response.json();
+  //         console.log("Test appointment created:", data);
+  //       } catch (error) {
+  //         console.error("Error creating test appointment:", error);
+  //       }
+  //     };
+  //     createTestAppointment();
+  //   }, []);
 
   const NavigationCard = ({
     icon: Icon,
@@ -273,7 +273,6 @@ export default function Profile() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          
           <div className="lg:col-span-1 space-y-4">
             <NavigationCard
               icon={UserCircle}
@@ -305,7 +304,6 @@ export default function Profile() {
             />
           </div>
 
-          
           <div className="lg:col-span-3">
             {activeSection === "profile" && (
               <div className="bg-white rounded-xl shadow-sm p-6">
@@ -410,7 +408,6 @@ export default function Profile() {
                       Delete Account
                     </button>
 
-                   
                     <button
                       type="button"
                       onClick={handleCreateListing}
@@ -448,9 +445,10 @@ export default function Profile() {
             {activeSection === "properties" && (
               <Dashboard
                 activeTab="listings"
-                userListings={userListings} 
+                userListings={userListings}
                 userAppointments={userAppointments}
                 propertyAppointments={userAppointments}
+                currentUser={currentUser}
               />
             )}
 
@@ -458,7 +456,7 @@ export default function Profile() {
               <Dashboard
                 activeTab="appointments"
                 userListings={userListings}
-                userAppointments={userAppointments} 
+                userAppointments={userAppointments}
                 propertyAppointments={userAppointments}
               />
             )}
@@ -495,24 +493,28 @@ const Dashboard = ({
   error,
   setUserListings,
 }) => {
-    const handleListingDelete = async (listingId) => {
-        try {
-          const res = await fetch(`/api/listing/delete/${listingId}`, {
-            method: "DELETE",
-          });
-          const data = await res.json();
-          if (data.success === false) {
-            console.log(data.message);
-            return;
-          }
-    
-          setUserListings((prev) =>
-            prev.filter((listing) => listing._id !== listingId)
-          );
-        } catch (error) {
-          console.log(error.message);
-        }
-      };
+  const { currentUser } = useSelector((state) => state.user);
+  const handleListingDelete = async (listingId) => {
+    try {
+      const res = await fetch(`/api/listing/delete/${listingId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (data.success === false) {
+        console.log(data.message);
+        return;
+      }
+
+      setUserListings((prev) =>
+        prev.filter((listing) => listing._id !== listingId)
+      );
+    } catch (error) {
+      console.log(error.message);
+    }
+  };
+
+  const orders = userAppointments.data;
+
   return (
     <div className="bg-white rounded-xl shadow-sm p-6">
       <h2 className="text-xl font-semibold text-gray-800 mb-6">
@@ -593,62 +595,60 @@ const Dashboard = ({
                 </div>
               )}
 
+            {console.log(orders[97].userId === currentUser._id, "dataaa")}
+
             {!Loading &&
               !error &&
-              userAppointments &&
-              userAppointments.length > 0 && (
-                <div className="space-y-4">
-                  {userAppointments.map((appointment) => (
-                    <div
-                      key={appointment._id}
-                      className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="text-lg font-semibold">
-                            Order #{appointment.orderId}
-                          </h3>
-                          <div className="mt-2 space-y-2">
-                            <p className="text-sm text-gray-600">
-                              Amount: {appointment.amount}{" "}
-                              {appointment.currency}
-                            </p>
-                            {appointment.propertyId && (
-                              <>
-                                <p className="text-sm text-gray-600">
-                                  Property: {appointment.propertyId.name}
-                                </p>
-                                <p className="text-sm text-gray-600">
-                                  Location: {appointment.propertyId.location}
-                                </p>
-                              </>
-                            )}
-                            <p className="text-sm text-gray-600">
-                              Date:{" "}
-                              {new Date(
-                                appointment.createdAt
-                              ).toLocaleDateString()}
-                            </p>
-                          </div>
+              orders &&
+              orders.length > 0 &&
+              orders
+                .filter((order) => order.userId === currentUser._id)
+                .map((data) => (
+                  <div
+                    key={data._id}
+                    className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="text-lg font-semibold">
+                          Order Id: #{data.orderId}
+                        </h3>
+                        <div className="mt-2 space-y-2">
+                          <p className="text-sm text-gray-600">
+                            Amount: ₹ {data.amount / 100}
+                          </p>
+                          {data.propertyId && (
+                            <>
+                              <p className="text-sm text-gray-600">
+                                Property: {data.propertyId.name}
+                              </p>
+                              <p className="text-sm text-gray-600">
+                                Location: {data.propertyId.location}
+                              </p>
+                            </>
+                          )}
+                          <p className="text-sm text-gray-600">
+                            Appointment Date:{" "}
+                            {new Date(data.createdAt).toLocaleDateString()}
+                          </p>
                         </div>
-                        <span
-                          className={`px-3 py-1 rounded-full text-sm font-medium
-                          ${
-                            appointment.status === "completed"
-                              ? "bg-green-100 text-green-800"
-                              : appointment.status === "pending"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {appointment.status.charAt(0).toUpperCase() +
-                            appointment.status.slice(1)}
-                        </span>
                       </div>
+                      <span
+                        className={`px-3 py-1 rounded-full text-sm font-medium
+                            ${
+                              data.status === "completed"
+                                ? "bg-green-100 text-green-800"
+                                : data.status === "pending"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                      >
+                        {data.status.charAt(0).toUpperCase() +
+                          data.status.slice(1)}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              )}
+                  </div>
+                ))}
           </div>
         </div>
       )}

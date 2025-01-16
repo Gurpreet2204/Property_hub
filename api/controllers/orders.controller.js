@@ -7,8 +7,9 @@ const razorpayInstance = new Razorpay({
 });
 
 export const createOrder = async (req, res) => {
+    console.log('req--->',req.body);
   try {
-    const { appointmentFees, status, orderId } = req.body;
+    const { appointmentFees, status, orderId, Userid } = req.body;
 
     if (!appointmentFees) {
       return res.status(400).json({
@@ -18,28 +19,29 @@ export const createOrder = async (req, res) => {
     }
 
     const options = {
-      amount: appointmentFees * 100, // Convert to paise
+      amount: appointmentFees * 100, 
       currency: "INR",
       receipt: orderId,
+     
     };
-
-    // Create order with Razorpay
+    
     const order = await razorpayInstance.orders.create(options);
-    console.log("Order created with Razorpay:", order); // Log Razorpay's response
+    console.log("Order created with Razorpay:", order); 
 
-    // Save order details in MongoDB
+   
     const newOrder = new Order({
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
       status: order.status || status,
       createdAt: new Date().toISOString(),
+      userId: req.body.Userid
     });
 
     await newOrder.save();
-    console.log("Order saved in MongoDB:", newOrder); // Log MongoDB order data
+    console.log("Order saved in MongoDB:", newOrder); 
 
-    // Send response to frontend
+
     const responseData = {
       code: 200,
       message: "Order created successfully",
@@ -48,14 +50,15 @@ export const createOrder = async (req, res) => {
         amount: order.amount,
         currency: order.currency,
         createdAt: order.created_at,
+        userID: req.body.Userid
       },
     };
     
-    console.log("Response data sent to frontend:", responseData); // Log final response data
+    console.log("Response data sent to frontend:", responseData);
     return res.status(200).json(responseData);
     
-  } catch (error) {
-    console.error("Error creating order:", error); // Log error details
+  } catch(error) {
+    console.error("Error creating order:", error);
     return res.status(500).json({
       code: 500,
       message: "Server error",
