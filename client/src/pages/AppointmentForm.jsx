@@ -135,7 +135,7 @@ const AppointmentForm = () => {
 
   const handleOpenRazorpay = (orderData) => {
     console.log("Order data received:", orderData);
-
+  
     const options = {
       key: "rzp_test_0o4NhN2bWbS3HN",
       amount: orderData.amount,
@@ -151,17 +151,20 @@ const AppointmentForm = () => {
               "Content-Type": "application/json",
             },
             body: JSON.stringify({
-              razorpay_payment_id: response.razorpay_payment_id,
-              razorpay_order_id: response.razorpay_order_id,
-              razorpay_signature: response.razorpay_signature,
+              response: {
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+              },
             }),
           });
-
+  
           const verifyData = await verifyResponse.json();
-
+          console.log('verify data------>', verifyData);
           if (verifyResponse.ok && verifyData.code === 200) {
             setPaymentSuccess(true);
             setShowSuccess(true);
+            console.log('navigate de andr console');
             navigate("/");
           } else {
             console.error("Payment verification failed:", verifyData.message);
@@ -176,7 +179,7 @@ const AppointmentForm = () => {
         contact: phone,
       },
     };
-
+  
     const rzp = new window.Razorpay(options);
     rzp.open();
   };

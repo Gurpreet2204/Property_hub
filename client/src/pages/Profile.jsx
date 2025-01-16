@@ -1,40 +1,38 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
-import { useDispatch, useSelector } from "react-redux";
-import { useRef, useState, useEffect } from "react";
 import {
-  getDownloadURL,
-  getStorage,
-  ref,
-  uploadBytesResumable,
+    getDownloadURL,
+    getStorage,
+    ref,
+    uploadBytesResumable,
 } from "firebase/storage";
+import {
+    AlertCircle,
+    Building,
+    CalendarCheck,
+    Camera,
+    CheckCircle2,
+    ChevronRight,
+    Lock,
+    LogOut,
+    Mail,
+    Settings,
+    Trash2,
+    UserCircle
+} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { Link, useNavigate } from "react-router-dom";
 import { app } from "../firebase";
 import {
-  UserCircle,
-  Upload,
-  Mail,
-  Lock,
-  LogOut,
-  Trash2,
-  Plus,
-  Settings,
-  Camera,
-  Building,
-  CalendarCheck,
-  AlertCircle,
-  CheckCircle2,
-  ChevronRight,
-} from "lucide-react";
-import {
-  updateUserStart,
-  updateUserFailure,
-  updateUserSuccess,
-  deleteUserStart,
-  deleteUserFailure,
-  deleteUserSuccess,
-  signOutUserStart,
+    deleteUserFailure,
+    deleteUserStart,
+    deleteUserSuccess,
+    signOutUserStart,
+    updateUserFailure,
+    updateUserStart,
+    updateUserSuccess,
 } from "../redux/user/userSlice";
-import { Link, useNavigate } from "react-router-dom";
 
 export default function Profile() {
   const fileRef = useRef(null);
@@ -537,9 +535,9 @@ const Dashboard = ({
               >
                 <Link to={`/listing/${listing._id}`}>
                   <img
-                    src={listing.imageUrls[0]} // Ensure this is the correct URL
+                    src={listing.imageUrls[0]} 
                     alt="listing cover"
-                    className="h-16 w-16 object-cover rounded-md" // Adjusted for styling
+                    className="h-16 w-16 object-cover rounded-md" 
                   />
                 </Link>
                 <Link
