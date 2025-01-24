@@ -142,7 +142,7 @@ const AppointmentForm = () => {
     console.log("Order data received:", orderData);
   
     const options = {
-      key: "rzp_test_0o4NhN2bWbS3HN",
+      key: import.meta.env.RAZORPAY_KEY,
       amount: orderData.amount,
       currency: orderData.currency,
       name: listing.name || "Appointment Booking",
