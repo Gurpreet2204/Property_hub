@@ -1,37 +1,37 @@
 /* eslint-disable no-unused-vars */
 /* eslint-disable react/prop-types */
 import {
-    getDownloadURL,
-    getStorage,
-    ref,
-    uploadBytesResumable,
+  getDownloadURL,
+  getStorage,
+  ref,
+  uploadBytesResumable,
 } from "firebase/storage";
 import {
-    AlertCircle,
-    Building,
-    CalendarCheck,
-    Camera,
-    CheckCircle2,
-    ChevronRight,
-    Lock,
-    LogOut,
-    Mail,
-    Settings,
-    Trash2,
-    UserCircle
+  AlertCircle,
+  Building,
+  CalendarCheck,
+  Camera,
+  CheckCircle2,
+  ChevronRight,
+  Lock,
+  LogOut,
+  Mail,
+  Settings,
+  Trash2,
+  UserCircle,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { app } from "../firebase";
 import {
-    deleteUserFailure,
-    deleteUserStart,
-    deleteUserSuccess,
-    signOutUserStart,
-    updateUserFailure,
-    updateUserStart,
-    updateUserSuccess,
+  deleteUserFailure,
+  deleteUserStart,
+  deleteUserSuccess,
+  signOutUserStart,
+  updateUserFailure,
+  updateUserStart,
+  updateUserSuccess,
 } from "../redux/user/userSlice";
 
 export default function Profile() {
@@ -48,6 +48,8 @@ export default function Profile() {
   const [userAppointments, setUserAppointments] = useState([]);
   const [Loading, setLoading] = useState(true);
   const [Error, setError] = useState(null);
+  const [userListingsWithAppointments, setUserListingsWithAppointments] =
+    useState([]);
   const navigate = useNavigate();
   const dispatch = useDispatch();
   useEffect(() => {
@@ -148,27 +150,47 @@ export default function Profile() {
       try {
         setLoading(true);
         setShowListingsError(false);
-        const res = await fetch(`/api/user/listings/${currentUser._id}`, {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        });
-        const data = await res.json();
+        const token = localStorage.getItem("token");
 
-        if (data.success === false) {
+        if (!token) {
           setShowListingsError(true);
+          console.error("No authentication token found");
           return;
         }
 
-        setUserListings(data);
+        const res = await fetch(`/api/user/listings/${currentUser._id}`, {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) {
+          setShowListingsError(true);
+          console.error(`HTTP error! status: ${res.status}`);
+          return;
+        }
+
+        const data = await res.json();
+        if (data.success === false) {
+          setShowListingsError(true);
+          console.error("Failed to fetch listings:", data.message);
+          return;
+        }
       } catch (error) {
+        console.error("Error fetching listings:", error.message);
         setShowListingsError(true);
       } finally {
         setLoading(false);
       }
     };
-    handleShowListings();
-  }, []);
+
+    if (currentUser?._id) {
+      handleShowListings();
+    }
+  }, [currentUser]);
 
   useEffect(() => {
     const fetchUserAppointments = async () => {
@@ -201,6 +223,7 @@ export default function Profile() {
 
     fetchUserAppointments();
   }, []);
+
   //   useEffect(() => {
   //     const createTestAppointment = async () => {
   //       try {
@@ -447,6 +470,7 @@ export default function Profile() {
                 userAppointments={userAppointments}
                 propertyAppointments={userAppointments}
                 currentUser={currentUser}
+                setShowListingsError={setShowListingsError}
               />
             )}
 
@@ -482,7 +506,6 @@ export default function Profile() {
   );
 }
 
-// Dashboard Component
 const Dashboard = ({
   activeTab,
   userListings,
@@ -490,8 +513,12 @@ const Dashboard = ({
   Loading,
   error,
   setUserListings,
+  setShowListingsError,
 }) => {
   const { currentUser } = useSelector((state) => state.user);
+  const [properties, setProperties] = useState({});
+  const [loadingProperties, setLoadingProperties] = useState({});
+
   const handleListingDelete = async (listingId) => {
     try {
       const res = await fetch(`/api/listing/delete/${listingId}`, {
@@ -502,7 +529,6 @@ const Dashboard = ({
         console.log(data.message);
         return;
       }
-
       setUserListings((prev) =>
         prev.filter((listing) => listing._id !== listingId)
       );
@@ -511,7 +537,80 @@ const Dashboard = ({
     }
   };
 
-  const orders = userAppointments.data;
+  const fetchPropertyDetails = async (propertyId) => {
+    console.log("Attempting to fetch property with ID:", propertyId);
+
+    if (!propertyId) {
+      console.log("No propertyId provided");
+      return;
+    }
+
+    if (properties[propertyId]) {
+      console.log("Property already in cache:", properties[propertyId]);
+      return;
+    }
+
+    setLoadingProperties((prev) => ({ ...prev, [propertyId]: true }));
+
+    try {
+      const token = localStorage.getItem("token");
+      console.log("Using token:", token ? "Token exists" : "No token found");
+
+      // Log the full URL being fetched
+      const url = `/api/listings/${propertyId}`;
+      console.log("Fetching from URL:", url);
+
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+      });
+
+      console.log("Response status:", res.status);
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log("Fetched property data:", data);
+
+      setProperties((prev) => ({
+        ...prev,
+        [propertyId]: data,
+      }));
+    } catch (error) {
+      console.error("Error fetching property:", error);
+      console.error("Full error details:", {
+        message: error.message,
+        stack: error.stack,
+      });
+    } finally {
+      setLoadingProperties((prev) => ({ ...prev, [propertyId]: false }));
+    }
+  };
+
+  const orders = userAppointments?.data || [];
+
+  // Debug logging for orders data
+  //   useEff     ers]);
+
+  //   useEffect(() => {
+  //     if (orders && orders.length > 0) {
+  //       orders.forEach((order) => {
+  //         // Check all possible property ID fields
+  //         const propertyId = order.propertyId || order.listing || order.listingId;
+
+  //         if (propertyId) {
+  //           fetchPropertyDetails(propertyId);
+  //         } else {
+  //           console.log("No property ID found in order:", order);
+  //         }
+  //       });
+  //     }
+  //   }, [orders]);
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-6">
@@ -519,6 +618,7 @@ const Dashboard = ({
         {activeTab === "listings" ? "My Listings" : "My Appointments"}
       </h2>
 
+      {/* Listings Section */}
       {activeTab === "listings" && userListings.length === 0 && (
         <p>No listings found. Start adding some!</p>
       )}
@@ -535,9 +635,9 @@ const Dashboard = ({
               >
                 <Link to={`/listing/${listing._id}`}>
                   <img
-                    src={listing.imageUrls[0]} 
+                    src={listing.imageUrls[0]}
                     alt="listing cover"
-                    className="h-16 w-16 object-cover rounded-md" 
+                    className="h-16 w-16 object-cover rounded-md"
                   />
                 </Link>
                 <Link
@@ -566,9 +666,10 @@ const Dashboard = ({
         </ul>
       )}
 
+      {/* Appointments Section */}
       {activeTab === "appointments" && (
         <div className="lg:col-span-3">
-          <div className="bg-white rounded-xl shadow-sm p-6">
+          <div className="bg-white rounded-xl shadow-sm">
             <h2 className="text-xl font-semibold text-gray-800 mb-6">
               My Appointments
             </h2>
@@ -585,68 +686,141 @@ const Dashboard = ({
               </div>
             )}
 
-            {!Loading &&
-              !error &&
-              (!userAppointments || userAppointments.length === 0) && (
-                <div className="text-center py-4">
-                  <p>No appointments found.</p>
-                </div>
-              )}
+            {!Loading && !error && (!orders || orders.length === 0) && (
+              <div className="text-center py-4">
+                <p>No appointments found.</p>
+              </div>
+            )}
 
-            {console.log(orders[97].userId === currentUser._id, "dataaa")}
+            <div className="space-y-4">
+              {!Loading &&
+                !error &&
+                orders.length > 0 &&
+                orders
+                  .filter((order) => order.userId === currentUser._id)
+                  .map((order) => {
+                    const propertyId =
+                      order.propertyId || order.listing || order.listingId;
+                    console.log(
+                      "Rendering order:",
+                      order.orderId,
+                      "with property ID:",
+                      propertyId
+                    );
 
-            {!Loading &&
-              !error &&
-              orders &&
-              orders.length > 0 &&
-              orders
-                .filter((order) => order.userId === currentUser._id)
-                .map((data) => (
-                  <div
-                    key={data._id}
-                    className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-                  >
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="text-lg font-semibold">
-                          Order Id: #{data.orderId}
-                        </h3>
-                        <div className="mt-2 space-y-2">
-                          <p className="text-sm text-gray-600">
-                            Amount: ₹ {data.amount / 100}
-                          </p>
-                          {data.propertyId && (
-                            <>
-                              <p className="text-sm text-gray-600">
-                                Property: {data.propertyId.name}
-                              </p>
-                              <p className="text-sm text-gray-600">
-                                Location: {data.propertyId.location}
-                              </p>
-                            </>
+                    const property = properties[propertyId];
+                    const isLoadingProperty = loadingProperties[propertyId];
+
+                    const token = localStorage.getItem("token");
+                    const LwT = fetch(
+                      `/api/user/listings/${order.propertyId}`,
+                      {
+                        method: "GET",
+                        credentials: "include",
+                        headers: {
+                          "Content-Type": "application/json",
+                          Authorization: `Bearer ${token}`,
+                        },
+                      }
+                    );
+
+                    const data = LwT.json();
+
+                    setUserListings(data);
+
+                    return (
+                      <div
+                        key={order._id}
+                        className="flex items-start gap-4 border rounded-lg p-4 hover:shadow-md transition-shadow"
+                      >
+                        {/* Property Image */}
+                        <div className="flex-shrink-0">
+                          {isLoadingProperty ? (
+                            <div className="w-24 h-24 bg-gray-200 rounded-lg animate-pulse" />
+                          ) : property?.imageUrls ? (
+                            <img
+                              src={property.imageUrls[0]}
+                              alt={property.name}
+                              className="w-24 h-24 object-cover rounded-lg"
+                            />
+                          ) : (
+                            <div className="w-24 h-24 bg-gray-200 rounded-lg flex items-center justify-center">
+                              <span className="text-gray-400">No image</span>
+                            </div>
                           )}
-                          <p className="text-sm text-gray-600">
-                            Appointment Date:{" "}
-                            {new Date(data.createdAt).toLocaleDateString()}
-                          </p>
+                        </div>
+
+                        {/* Appointment Details */}
+                        <div className="flex-grow">
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <h3 className="text-lg font-semibold">
+                                Order #{order.orderId}
+                              </h3>
+                              {isLoadingProperty ? (
+                                <div className="mt-2 space-y-2">
+                                  <div className="h-4 bg-gray-200 rounded w-48 animate-pulse" />
+                                  <div className="h-4 bg-gray-200 rounded w-32 animate-pulse" />
+                                </div>
+                              ) : property ? (
+                                <div className="mt-1">
+                                  <h4 className="text-md font-medium text-gray-900">
+                                    {property.name}
+                                  </h4>
+                                  <p className="text-sm text-gray-600">
+                                    {property.address}
+                                  </p>
+                                  <p className="text-sm text-gray-600">
+                                    Type: {property.type}
+                                  </p>
+                                  {property.bedrooms && (
+                                    <p className="text-sm text-gray-600">
+                                      {property.bedrooms} bedrooms •{" "}
+                                      {property.bathrooms} bathrooms
+                                    </p>
+                                  )}
+                                </div>
+                              ) : (
+                                <p className="text-sm text-gray-500">
+                                  Property details not available
+                                </p>
+                              )}
+                              <div className="mt-2 space-y-1">
+                                <p className="text-sm text-gray-600">
+                                  Amount: ₹
+                                  {(order.amount / 100).toLocaleString()}
+                                </p>
+                                <p className="text-sm text-gray-600">
+                                  Booked on:{" "}
+                                  {new Date(order.createdAt).toLocaleDateString(
+                                    "en-US",
+                                    {
+                                      year: "numeric",
+                                      month: "long",
+                                      day: "numeric",
+                                    }
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                            <span
+                              className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                order.status === "completed"
+                                  ? "bg-green-100 text-green-800"
+                                  : order.status === "pending"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {order.status.charAt(0).toUpperCase() +
+                                order.status.slice(1)}
+                            </span>
+                          </div>
                         </div>
                       </div>
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium
-                            ${
-                              data.status === "completed"
-                                ? "bg-green-100 text-green-800"
-                                : data.status === "pending"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                      >
-                        {data.status.charAt(0).toUpperCase() +
-                          data.status.slice(1)}
-                      </span>
-                    </div>
-                  </div>
-                ))}
+                    );
+                  })}
+            </div>
           </div>
         </div>
       )}

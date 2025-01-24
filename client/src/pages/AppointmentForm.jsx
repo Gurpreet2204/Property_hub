@@ -23,6 +23,7 @@ const AppointmentForm = () => {
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [amount, setAmount] = useState("");
+  const [propertyId, setPropertyId] = useState("");
   const [selectedDate, setSelectedDate] = useState(null);
   const [submitted, setSubmitted] = useState(false);
   const [appointments, setAppointments] = useState([]);
@@ -48,9 +49,11 @@ const AppointmentForm = () => {
           phone,
           selectedDate,
           duration: 60,
-          appointmentFees: amount,
+          propertyId: listing._id,
+          
         }),
       });
+      
 
       if (!response.ok) {
         const data = await response.text();
@@ -59,6 +62,7 @@ const AppointmentForm = () => {
       }
 
       const data = await response.json();
+      console.log('data----->', data);
       return data || false;
     } catch (error) {
       console.error("Error checking availability:", error);
@@ -113,6 +117,7 @@ const AppointmentForm = () => {
           status: "created",
           currency: "INR",
           Userid:currentUser._id,
+          propertyId:listing._id
           
         }),
       });
@@ -120,7 +125,7 @@ const AppointmentForm = () => {
       if (response.ok) {
         const data = await response.json();
         if (data.data) {
-          handleOpenRazorpay(data.data);
+          handleOpenRazorpay(data.data, propertyId);
         } else {
           console.error("Invalid response format:", data);
         }
@@ -133,7 +138,7 @@ const AppointmentForm = () => {
     }
   };
 
-  const handleOpenRazorpay = (orderData) => {
+  const handleOpenRazorpay = (orderData, propertyId ) => {
     console.log("Order data received:", orderData);
   
     const options = {
@@ -156,6 +161,7 @@ const AppointmentForm = () => {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_signature: response.razorpay_signature,
               },
+              propertyId:listing._id,
             }),
           });
   

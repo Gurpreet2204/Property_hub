@@ -9,7 +9,7 @@ const razorpayInstance = new Razorpay({
 export const createOrder = async (req, res) => {
     console.log('req--->',req.body);
   try {
-    const { appointmentFees, status, orderId, Userid } = req.body;
+    const { appointmentFees, status, orderId, propertyId } = req.body;
 
     if (!appointmentFees) {
       return res.status(400).json({
@@ -35,7 +35,9 @@ export const createOrder = async (req, res) => {
       currency: order.currency,
       status: order.status || status,
       createdAt: new Date().toISOString(),
-      userId: req.body.Userid
+      userId: req.body.Userid,
+      propertyId,
+
     });
 
     await newOrder.save();
@@ -51,6 +53,7 @@ export const createOrder = async (req, res) => {
         currency: order.currency,
         createdAt: order.created_at,
         userID: req.body.Userid
+        
       },
     };
     

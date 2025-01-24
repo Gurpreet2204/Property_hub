@@ -6,7 +6,8 @@ const orderSchema = new mongoose.Schema({
   currency: { type: String, required: true },
   status:{type: String, required: true},
   createdAt:{type: String, required:true},
-  userId:{type:String, required:true}
+  userId:{type:String, required:true},
+  propertyId:{type:String, required:true}
   
 });
 

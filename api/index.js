@@ -3,21 +3,21 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import crypto from "crypto";
 import cors from "cors";
-import path from "path";
 import { body, validationResult } from "express-validator";
+import cookieParser from "cookie-parser";
+
 import userRouter from "./routes/user.route.js";
 import authRouter from "./routes/auth.route.js";
 import listingRouter from "./routes/listing.route.js";
 import orderRouter from "./routes/order.route.js";
 import appointmentRouter from "./routes/appointment.route.js";
-import cookieParser from "cookie-parser";
 
 dotenv.config();
 
 const app = express();
+
 app.use(cookieParser());
 app.use(express.json());
-
 app.use(
   cors({
     origin: "*",
@@ -68,9 +68,11 @@ app.post("/api/checkAvailability", async (req, res) => {
 
     if (overlappingAppointments.length > 0) {
       await Appointment.findByIdAndRemove(newAppointment._id);
-      return res.status(409).json({
-        message: "Time slot not available. Please choose another time.",
-      });
+      return res
+        .status(409)
+        .json({
+          message: "Time slot not available. Please choose another time.",
+        });
     }
 
     return res.status(200).json({ message: "Time slot is available." });
@@ -82,37 +84,32 @@ app.post("/api/checkAvailability", async (req, res) => {
 
 app.post(
   "/api/verify",
-    body("response").isObject(),
-    body("response.razorpay_order_id").isString().notEmpty(),
-    body("response.razorpay_payment_id").isString().notEmpty(),
-    body("response.razorpay_signature").isString().notEmpty(),
-    async (req, res) => {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({ errors: errors.array() });
-      }
-  
-      const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
-        req.body.response;
-  
-      const generatedSignature = crypto
-        .createHmac("sha256", process.env.RAZORPAY_SECRET)
-        .update(`${razorpay_order_id}|${razorpay_payment_id}`)
-        .digest("hex");
-  
-      if (generatedSignature === razorpay_signature) {
-        return res.status(200).json({ code: 200, message: "Signature is valid" });
-      } else {
-        return res.status(500).json({ code: 500, message: "Invalid signature" });
-      }
+  body("response").isObject(),
+  body("response.razorpay_order_id").isString().notEmpty(),
+  body("response.razorpay_payment_id").isString().notEmpty(),
+  body("response.razorpay_signature").isString().notEmpty(),
+  body("propertyId").isString().notEmpty(),
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({ errors: errors.array() });
     }
-  );
 
-const __dirname = path.resolve();
-app.use(express.static(path.join(__dirname, "/client/dist")));
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "client", "dist", "index.html"));
-});
+    const { razorpay_order_id, razorpay_payment_id, razorpay_signature } =
+      req.body.response;
+
+    const generatedSignature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_SECRET)
+      .update(`${razorpay_order_id}|${razorpay_payment_id}`)
+      .digest("hex");
+
+    if (generatedSignature === razorpay_signature) {
+      return res.status(200).json({ code: 200, message: "Signature is valid" });
+    } else {
+      return res.status(500).json({ code: 500, message: "Invalid signature" });
+    }
+  }
+);
 
 app.use((err, req, res, next) => {
   console.error("Error:", err);
@@ -121,6 +118,7 @@ app.use((err, req, res, next) => {
   return res.status(statusCode).json({ success: false, statusCode, message });
 });
 
-app.listen(3001, () => {
-  console.log("Server is running on port 3001!");
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}!`);
 });

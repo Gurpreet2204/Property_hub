@@ -6,16 +6,7 @@ const appointmentSchema = new mongoose.Schema({
   currency: { type: String, required: true },
   status: { type: String, required: true },
   createdAt: { type: String, required: true },
-  propertyId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Listing",
-    required: true,
-  },
-  ownerId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-  },
+  propertyId: mongoose.Schema.Types.ObjectId
 });
 const Appointment = mongoose.model("UserAppointments", appointmentSchema);
 

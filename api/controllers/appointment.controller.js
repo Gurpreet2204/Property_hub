@@ -1,8 +1,9 @@
 import Appointment from "../models/appointment.model.js";
 
 export const getUserAppointments = async (req, res) => {
+    
     try {
-        // Get userId from request body instead of req.user
+        
         const { userId } = req.body;
         
         if (!userId) {
