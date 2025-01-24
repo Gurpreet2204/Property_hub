@@ -38,7 +38,7 @@ const AppointmentForm = () => {
 
   const checkAvailability = async () => {
     try {
-      const response = await fetch("/api/checkAvailability", {
+      const response = await fetch("https://property-hub-backend.onrender.com/api/checkAvailability", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -87,7 +87,7 @@ const AppointmentForm = () => {
     const fetchListing = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`/api/listing/get/${params.listingId}`);
+        const res = await fetch(`https://property-hub-backend.onrender.com/api/listing/get/${params.listingId}`);
         const data = await res.json();
         if (data.success === false) {
           setError(true);
@@ -109,7 +109,7 @@ const AppointmentForm = () => {
     try {
       const amountInPaise = listing.appointmentFees;
 
-      const response = await fetch("/api/orders/create", {
+      const response = await fetch("https://property-hub-backend.onrender.com/api/orders/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -150,7 +150,7 @@ const AppointmentForm = () => {
       order_id: orderData.id,
       handler: async function (response) {
         try {
-          const verifyResponse = await fetch("/api/verify", {
+          const verifyResponse = await fetch("https://property-hub-backend.onrender.com/api/verify", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",

@@ -90,7 +90,7 @@ export default function Profile() {
     e.preventDefault();
     try {
       dispatch(updateUserStart());
-      const res = await fetch(`/api/user/update/${currentUser._id}`, {
+      const res = await fetch(`https://property-hub-backend.onrender.com/api/user/update/${currentUser._id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -113,7 +113,7 @@ export default function Profile() {
   const handleDeleteUser = async () => {
     try {
       dispatch(deleteUserStart());
-      const res = await fetch(`/api/user/delete/${currentUser._id}`, {
+      const res = await fetch(`https://property-hub-backend.onrender.com/api/user/delete/${currentUser._id}`, {
         method: "DELETE",
       });
       const data = await res.json();
@@ -130,7 +130,7 @@ export default function Profile() {
   const handleSignOut = async () => {
     try {
       dispatch(signOutUserStart());
-      const res = await fetch("/api/auth/signout");
+      const res = await fetch("https://property-hub-backend.onrender.com/api/auth/signout");
       const data = await res.json();
       if (data.success === false) {
         dispatch(deleteUserFailure(data.message));
@@ -158,7 +158,7 @@ export default function Profile() {
           return;
         }
 
-        const res = await fetch(`/api/user/listings/${currentUser._id}`, {
+        const res = await fetch(`https://property-hub-backend.onrender.com/api/user/listings/${currentUser._id}`, {
           method: "GET",
           credentials: "include",
           headers: {
@@ -196,7 +196,7 @@ export default function Profile() {
     const fetchUserAppointments = async () => {
       try {
         setLoading(true);
-        const response = await fetch("/api/orders/get", {
+        const response = await fetch("https://property-hub-backend.onrender.com/api/orders/get", {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
@@ -521,7 +521,7 @@ const Dashboard = ({
 
   const handleListingDelete = async (listingId) => {
     try {
-      const res = await fetch(`/api/listing/delete/${listingId}`, {
+      const res = await fetch(`https://property-hub-backend.onrender.com/api/listing/delete/${listingId}`, {
         method: "DELETE",
       });
       const data = await res.json();
@@ -557,7 +557,7 @@ const Dashboard = ({
       console.log("Using token:", token ? "Token exists" : "No token found");
 
       // Log the full URL being fetched
-      const url = `/api/listings/${propertyId}`;
+      const url = `https://property-hub-backend.onrender.com/api/listings/${propertyId}`;
       console.log("Fetching from URL:", url);
 
       const res = await fetch(url, {
@@ -713,7 +713,7 @@ const Dashboard = ({
 
                     const token = localStorage.getItem("token");
                     const LwT = fetch(
-                      `/api/user/listings/${order.propertyId}`,
+                      `https://property-hub-backend.onrender.com/api/user/listings/${order.propertyId}`,
                       {
                         method: "GET",
                         credentials: "include",
