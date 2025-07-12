@@ -145,6 +145,7 @@ export default function CreateListing() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    console.log('formData', formData)
     try {
       if (formData.imageUrls.length < 1)
         return setError('You must upload at least one image');
@@ -152,7 +153,7 @@ export default function CreateListing() {
         return setError('Discount price must be lower than regular price');
       setLoading(true);
       setError(false);
-      const res = await fetch('https://property-hub-backend.onrender.com/api/listing/create', {
+      const res = await fetch('/api/listing/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -288,7 +289,7 @@ export default function CreateListing() {
                   id="bunglow"
                   className="w-5"
                   onChange={handleChange}
-                  checked={formData.Bunglow}
+                  checked={formData.bunglow}
                 />
                 <span>Bunglow</span>
               </div>
@@ -507,6 +508,7 @@ export default function CreateListing() {
 
         <button
           disabled={loading || uploading}
+          type='submit'
           className="p-3 bg-green-700 text-white rounded-lg uppercase hover:opacity-95 disabled:opacity-80"
         >
           {loading ? (

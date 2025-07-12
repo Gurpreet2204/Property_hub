@@ -24,7 +24,7 @@ export default function SignIn() {
       dispatch(signInStart());
       console.log('Before fetch:', JSON.stringify(formData));
 
-      const res = await fetch('https://property-hub-backend.onrender.com/api/auth/signin', {
+      const res = await fetch('/api/auth/signin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

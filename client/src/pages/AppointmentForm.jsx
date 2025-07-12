@@ -18,7 +18,7 @@ import {
 import { useSelector } from "react-redux";
 
 const AppointmentForm = () => {
- const { currentUser } = useSelector((state) => state.user);
+  const { currentUser } = useSelector((state) => state.user);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
@@ -38,7 +38,7 @@ const AppointmentForm = () => {
 
   const checkAvailability = async () => {
     try {
-      const response = await fetch("https://property-hub-backend.onrender.com/api/checkAvailability", {
+      const response = await fetch("/api/checkAvailability", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -50,10 +50,9 @@ const AppointmentForm = () => {
           selectedDate,
           duration: 60,
           propertyId: listing._id,
-          
+          ownerId: currentUser?._id,
         }),
       });
-      
 
       if (!response.ok) {
         const data = await response.text();
@@ -62,7 +61,7 @@ const AppointmentForm = () => {
       }
 
       const data = await response.json();
-      console.log('data----->', data);
+      console.log("data----->", data);
       return data || false;
     } catch (error) {
       console.error("Error checking availability:", error);
@@ -87,7 +86,7 @@ const AppointmentForm = () => {
     const fetchListing = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`https://property-hub-backend.onrender.com/api/listing/get/${params.listingId}`);
+        const res = await fetch(`/api/listing/get/${params.listingId}`);
         const data = await res.json();
         if (data.success === false) {
           setError(true);
@@ -109,16 +108,15 @@ const AppointmentForm = () => {
     try {
       const amountInPaise = listing.appointmentFees;
 
-      const response = await fetch("https://property-hub-backend.onrender.com/api/orders/create", {
+      const response = await fetch("/api/orders/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           appointmentFees: amountInPaise,
           status: "created",
           currency: "INR",
-          Userid:currentUser._id,
-          propertyId:listing._id
-          
+          Userid: currentUser._id,
+          propertyId: listing._id,
         }),
       });
 
@@ -138,11 +136,11 @@ const AppointmentForm = () => {
     }
   };
 
-  const handleOpenRazorpay = (orderData, propertyId ) => {
+  const handleOpenRazorpay = (orderData, propertyId) => {
     console.log("Order data received:", orderData);
-  
+
     const options = {
-      key: import.meta.env.RAZORPAY_KEY,
+      key: import.meta.env.VITE_RAZORPAY_KEY,
       amount: orderData.amount,
       currency: orderData.currency,
       name: listing.name || "Appointment Booking",
@@ -150,7 +148,7 @@ const AppointmentForm = () => {
       order_id: orderData.id,
       handler: async function (response) {
         try {
-          const verifyResponse = await fetch("https://property-hub-backend.onrender.com/api/verify", {
+          const verifyResponse = await fetch("/api/verify", {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -161,16 +159,16 @@ const AppointmentForm = () => {
                 razorpay_order_id: response.razorpay_order_id,
                 razorpay_signature: response.razorpay_signature,
               },
-              propertyId:listing._id,
+              propertyId: listing._id,
             }),
           });
-  
+
           const verifyData = await verifyResponse.json();
-          console.log('verify data------>', verifyData);
+          console.log("verify data------>", verifyData);
           if (verifyResponse.ok && verifyData.code === 200) {
             setPaymentSuccess(true);
             setShowSuccess(true);
-            console.log('navigate de andr console');
+            console.log("navigate de andr console");
             navigate("/");
           } else {
             console.error("Payment verification failed:", verifyData.message);
@@ -185,11 +183,11 @@ const AppointmentForm = () => {
         contact: phone,
       },
     };
-  
+
     const rzp = new window.Razorpay(options);
     rzp.open();
   };
-  console.log('currentUser----------->', currentUser._id);
+  console.log("currentUser----------->", currentUser._id);
   return (
     <div className="p-4 sm:p-6 md:p-8">
       <div className="max-w-2xl mx-auto relative">

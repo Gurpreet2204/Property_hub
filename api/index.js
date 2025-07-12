@@ -43,10 +43,11 @@ const Appointment = mongoose.model("Appointment", {
   date: Date,
   time: String,
   propertyId: mongoose.Schema.Types.ObjectId,
+  ownerId: mongoose.Schema.Types.ObjectId,
 });
 
 app.post("/api/checkAvailability", async (req, res) => {
-  const { name, email, phone, selectedDate, selectedTime, propertyId } =
+  const { name, email, phone, selectedDate, selectedTime, propertyId, ownerId } =
     req.body;
   try {
     const newAppointment = new Appointment({
@@ -56,6 +57,7 @@ app.post("/api/checkAvailability", async (req, res) => {
       date: new Date(selectedDate),
       time: selectedTime,
       propertyId,
+      ownerId,
     });
     await newAppointment.save();
 

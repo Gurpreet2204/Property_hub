@@ -23,9 +23,9 @@ export default function Listing() {
 
   useEffect(() => {
     const fetchListing = async () => {
-      try {
+      try { 
         setLoading(true);
-        const res = await fetch(`https://property-hub-backend.onrender.com/api/listing/get/${params.listingId}`);
+        const res = await fetch(`/api/listing/get/${params.listingId}`);
         const data = await res.json();
         if (data.success === false) {
           setError(true);

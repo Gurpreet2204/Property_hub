@@ -20,9 +20,9 @@ const Home = () => {
     const fetchAllListings = async () => {
       setLoading(true);
       try {
-        const fetchOffers = fetch('https://property-hub-backend.onrender.com/api/listing/get?offer=true&limit=4');
-        const fetchRent = fetch('https://property-hub-backend.onrender.com/api/listing/get?type=rent&limit=4');
-        const fetchSale = fetch('https://property-hub-backend.onrender.com/api/listing/get?type=sale&limit=4');
+        const fetchOffers = fetch('api//listing/get?offer=true&limit=4');
+        const fetchRent = fetch('/api/listing/get?type=rent&limit=4');
+        const fetchSale = fetch('/api/listing/get?type=sale&limit=4');
 
         const [offersRes, rentRes, saleRes] = await Promise.all([
           fetchOffers,

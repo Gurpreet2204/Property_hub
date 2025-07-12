@@ -13,6 +13,7 @@ import {
   Camera,
   CheckCircle2,
   ChevronRight,
+  Cookie,
   Lock,
   LogOut,
   Mail,
@@ -90,7 +91,7 @@ export default function Profile() {
     e.preventDefault();
     try {
       dispatch(updateUserStart());
-      const res = await fetch(`https://property-hub-backend.onrender.com/api/user/update/${currentUser._id}`, {
+      const res = await fetch(`/api/user/update/${currentUser._id}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -113,7 +114,7 @@ export default function Profile() {
   const handleDeleteUser = async () => {
     try {
       dispatch(deleteUserStart());
-      const res = await fetch(`https://property-hub-backend.onrender.com/api/user/delete/${currentUser._id}`, {
+      const res = await fetch(`/api/user/delete/${currentUser._id}`, {
         method: "DELETE",
       });
       const data = await res.json();
@@ -130,7 +131,7 @@ export default function Profile() {
   const handleSignOut = async () => {
     try {
       dispatch(signOutUserStart());
-      const res = await fetch("https://property-hub-backend.onrender.com/api/auth/signout");
+      const res = await fetch("/api/auth/signout");
       const data = await res.json();
       if (data.success === false) {
         dispatch(deleteUserFailure(data.message));
@@ -151,14 +152,9 @@ export default function Profile() {
         setLoading(true);
         setShowListingsError(false);
         const token = localStorage.getItem("token");
+        console.log("token", token);
 
-        if (!token) {
-          setShowListingsError(true);
-          console.error("No authentication token found");
-          return;
-        }
-
-        const res = await fetch(`https://property-hub-backend.onrender.com/api/user/listings/${currentUser._id}`, {
+        const res = await fetch(`/api/user/listings/${currentUser._id}`, {
           method: "GET",
           credentials: "include",
           headers: {
@@ -179,6 +175,10 @@ export default function Profile() {
           console.error("Failed to fetch listings:", data.message);
           return;
         }
+        setUserListings(data.listings || data);
+        console.log("data---->", data);
+
+        setUserListings(data.listings || data);
       } catch (error) {
         console.error("Error fetching listings:", error.message);
         setShowListingsError(true);
@@ -190,61 +190,42 @@ export default function Profile() {
     if (currentUser?._id) {
       handleShowListings();
     }
-  }, [currentUser]);
-
-  useEffect(() => {
-    const fetchUserAppointments = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch("https://property-hub-backend.onrender.com/api/orders/get", {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-          credentials: "include",
-        });
-
-        const appointmentsData = await response.json();
-        console.log("Appointments data:", appointmentsData.data);
-
-        if (!response.ok) {
-          throw new Error(
-            appointmentsData.message || "Failed to fetch appointments"
-          );
-        }
-
-        setUserAppointments(appointmentsData || []);
-      } catch (error) {
-        console.error("Error fetching appointments:", error);
-        setError(error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUserAppointments();
   }, []);
 
-  //   useEffect(() => {
-  //     const createTestAppointment = async () => {
-  //       try {
-  //         const response = await fetch("/api/appointments/my-appointments", {
-  //           method: "POST",
-  //           headers: {
-  //             "Content-Type": "application/json",
-  //             Authorization: `Bearer ${localStorage.getItem("token")}`,
-  //           },
-  //           body: JSON.stringify({
-  //             userId: currentUser._id,
-  //           }),
-  //         });
-  //         const data = await response.json();
-  //         console.log("Test appointment created:", data);
-  //       } catch (error) {
-  //         console.error("Error creating test appointment:", error);
-  //       }
-  //     };
-  //     createTestAppointment();
-  //   }, []);
+useEffect(() => {
+  const fetchUserAppointments = async () => {
+    try {
+      setLoading(true);
+      const token = localStorage.getItem("token");
+      const response = await fetch(`/api/appointments/my-appointments/get?userId=${currentUser._id}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        credentials: "include",
+      });
+
+      const appointmentsData = await response.json();
+      console.log("Appointments data:", appointmentsData);
+
+      if (!response.ok) {
+        throw new Error(
+          appointmentsData.message || "Failed to fetch appointments"
+        );
+      }
+
+      setUserAppointments(appointmentsData.appointments || []);
+    } catch (error) {
+      console.error("Error fetching appointments:", error);
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (currentUser?._id) {
+    fetchUserAppointments();
+  }
+}, [currentUser?._id, Error]);
 
   const NavigationCard = ({
     icon: Icon,
@@ -333,7 +314,7 @@ export default function Profile() {
                     <div className="relative">
                       <img
                         onClick={() => fileRef.current.click()}
-                        src={formData.avatar || currentUser.avatar}
+                        src={formData.avatar || currentUser.avatar || "/assets/default-avatar.png"}
                         alt="profile"
                         className="h-32 w-32 rounded-full object-cover border-4 border-white shadow-lg transition-transform group-hover:scale-105"
                       />
@@ -521,7 +502,7 @@ const Dashboard = ({
 
   const handleListingDelete = async (listingId) => {
     try {
-      const res = await fetch(`https://property-hub-backend.onrender.com/api/listing/delete/${listingId}`, {
+      const res = await fetch(`/api/listing/delete/${listingId}`, {
         method: "DELETE",
       });
       const data = await res.json();
@@ -557,7 +538,7 @@ const Dashboard = ({
       console.log("Using token:", token ? "Token exists" : "No token found");
 
       // Log the full URL being fetched
-      const url = `https://property-hub-backend.onrender.com/api/listings/${propertyId}`;
+      const url = `/api/listings/${propertyId}`;
       console.log("Fetching from URL:", url);
 
       const res = await fetch(url, {
@@ -597,20 +578,21 @@ const Dashboard = ({
   // Debug logging for orders data
   //   useEff     ers]);
 
-  //   useEffect(() => {
-  //     if (orders && orders.length > 0) {
-  //       orders.forEach((order) => {
-  //         // Check all possible property ID fields
-  //         const propertyId = order.propertyId || order.listing || order.listingId;
+    useEffect(() => {
+      if (orders && orders.length > 0) {
+        orders.forEach((order) => {
+          // Check all possible property ID fields
+          const propertyId = order.propertyId || order.listing || order.listingId;
 
-  //         if (propertyId) {
-  //           fetchPropertyDetails(propertyId);
-  //         } else {
-  //           console.log("No property ID found in order:", order);
-  //         }
-  //       });
-  //     }
-  //   }, [orders]);
+          if (propertyId) {
+            fetchPropertyDetails(propertyId);
+          } else {
+            console.log("No property ID found in order:", order);
+          }
+        });
+      }
+    }, [orders]);
+  console.log("userListings", userListings);
 
   return (
     <div className="bg-white rounded-xl shadow-sm p-6">
@@ -628,6 +610,7 @@ const Dashboard = ({
             <h1 className="text-center mt-7 text-2xl font-semibold">
               Your Listings
             </h1>
+            {}
             {userListings.map((listing) => (
               <div
                 key={listing._id}
@@ -670,9 +653,7 @@ const Dashboard = ({
       {activeTab === "appointments" && (
         <div className="lg:col-span-3">
           <div className="bg-white rounded-xl shadow-sm">
-            <h2 className="text-xl font-semibold text-gray-800 mb-6">
-              My Appointments
-            </h2>
+           
 
             {Loading && (
               <div className="text-center py-4">
@@ -711,22 +692,22 @@ const Dashboard = ({
                     const property = properties[propertyId];
                     const isLoadingProperty = loadingProperties[propertyId];
 
-                    const token = localStorage.getItem("token");
-                    const LwT = fetch(
-                      `https://property-hub-backend.onrender.com/api/user/listings/${order.propertyId}`,
-                      {
-                        method: "GET",
-                        credentials: "include",
-                        headers: {
-                          "Content-Type": "application/json",
-                          Authorization: `Bearer ${token}`,
-                        },
-                      }
-                    );
+                    // const token = localStorage.getItem("token");
+                    // const res = fetch(
+                    //   `/api/user/listings/${order.propertyId}`,
+                    //   {
+                    //     method: "GET",
+                    //     credentials: "include",
+                    //     headers: {
+                    //       "Content-Type": "application/json",
+                    //       Authorization: `Bearer ${token}`,
+                    //     },
+                    //   }
+                    // );
 
-                    const data = LwT.json();
+                    // const data = res.json();
 
-                    setUserListings(data);
+                    // setUserListings(data);
 
                     return (
                       <div

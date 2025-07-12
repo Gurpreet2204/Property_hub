@@ -4,7 +4,10 @@ import { errorHandler } from '../utils/error.js';
 export const createListing = async (req, res, next) => {
   try {
     const listing = await Listing.create(req.body);
-    return res.status(201).json(listing);
+    return res.status(201).json({
+      success:true,
+      _id:listing._id
+    });
   } catch (error) {
     next(error);
   }
@@ -64,15 +67,11 @@ export const getListing = async (req, res, next) => {
 };
 
 export const getListings = async (req, res, next) => {
+
   try {
     const limit = parseInt(req.query.limit) || 9;
     const startIndex = parseInt(req.query.startIndex) || 0;
     let offer = req.query.offer;
-
-    // console.log('Incoming request parameters:');
-    // console.log('Limit:', limit);
-    // console.log('Start Index:', startIndex);
-    // console.log('Offer:', offer);
 
     if (offer === undefined || offer === 'false') {
       offer = { $in: [false, true] };
